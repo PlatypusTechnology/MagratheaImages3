@@ -1,0 +1,17 @@
+_compiled
+sftp-config.json
+magrathea.conf
+logs/*.txt
+plugins
+database/*.sql
+
+docker/.env
+vendor
+src/vendor
+src/vendor/*
+.composer.lock
+
+Magrathea/
+log*.txt
+ 
+.DS_Store

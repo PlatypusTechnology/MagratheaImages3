@@ -1,0 +1,5 @@
+{
+	"require": {
+		"platypustechnology/magratheaphp2": "dev-main"
+	}
+}
