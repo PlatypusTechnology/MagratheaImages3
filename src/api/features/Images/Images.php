@@ -34,6 +34,12 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 		return PathManager::GetGeneratedFolder($this->folder).$this->BuildFilename("thumb");
 	}
 
+	public function GetFileName($w, $h, $stretch=false): string {
+		$dimensions = $w."x".$h;
+		if($stretch) $dimensions .= "-s";
+		return PathManager::GetGeneratedFolder($this->folder).$this->BuildFilename($dimensions);
+	}
+
 	public function BuildFilename(string $addon): string {
 		$fileArr = explode('.', $this->filename);
 		$ext = array_pop($fileArr);

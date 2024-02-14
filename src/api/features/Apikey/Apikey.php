@@ -1,9 +1,8 @@
 <?php
 namespace MagratheaImages3\Apikey;
 
-use Magrathea2\Config;
+use MagratheaImages3\Images\PathManager;
 
-use Magrathea2\Helper;
 use function Magrathea2\now;
 
 class Apikey extends \MagratheaImages3\Apikey\Base\ApikeyBase {
@@ -39,9 +38,7 @@ class Apikey extends \MagratheaImages3\Apikey\Base\ApikeyBase {
 	}
 
 	public function GetDestinationFolder(): string {
-		$mediaFolder = Config::Instance()->Get("medias_path");
-		$mediaFolder = Helper::EnsureTrailingSlash($mediaFolder);
-		return $mediaFolder.$this->folder;
+		return PathManager::GetMediaFolder($this->folder);
 	}
 
 }

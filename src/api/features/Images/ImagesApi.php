@@ -2,6 +2,7 @@
 
 namespace MagratheaImages3\Images;
 
+use Magrathea2\Debugger;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\ApikeyControl;
@@ -36,11 +37,37 @@ class ImagesApi extends MagratheaApiControl {
 		}
 	}
 
+	public function GetWidthHeight($sizes=null): array {
+		if($sizes == null) {
+			$width = @$_GET["w"] ? $_GET["w"] : @$_GET["width"];
+			$height = @$_GET["h"] ? $_GET["h"] : @$_GET["height"];
+		} else {
+			$pieces = explode('x', $sizes);
+			$width = $pieces[0];
+			$height = $pieces[1];
+		}
+		return [
+			'width' => $width,
+			'height' => $height,
+		];
+	}
+
 	public function ViewImage($params) {
+		$size = @$params["size"];
+		if(!empty($size)) {
+			$dimensions = $this->GetWidthHeight($size);
+		} else {
+			$dimensions = $this->GetWidthHeight(@$_GET["size"]);
+		}
+		if($dimensions["width"] == null || $dimensions["height"] == null) {
+			return $this->ViewThumb($params);
+		}
+		$stretch = @$_GET["stretch"] == '1';
 		try {
 			$image = $this->GetById($params);
 			$viewer = new ImageViewer($image);
-			return $viewer->ViewRaw();
+			$viewer->Size($dimensions["width"], $dimensions["height"], $stretch);
+			return $viewer->ViewFile();
 		} catch(\Exception $e) {
 			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
 		}
@@ -50,7 +77,7 @@ class ImagesApi extends MagratheaApiControl {
 		try {
 			$image = $this->GetById($params);
 			$viewer = new ImageViewer($image);
-			return $viewer->ViewRaw();
+			return $viewer->Raw();
 		} catch(\Exception $e) {
 			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
 		}
@@ -60,38 +87,87 @@ class ImagesApi extends MagratheaApiControl {
 		try {
 			$image = $this->GetById($params);
 			$viewer = new ImageViewer($image);
-			return $viewer->ViewThumb();
+			$viewer->Thumb()->ViewFile();
 		} catch(\Exception $e) {
 			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
 		}
 	}
 
-	private function GetApiKeyByPost($post) {
+	private function GetApiKeyByValue($key) {
 		$keyControl = new ApikeyControl();
-		$key = @$post["key"];
 		if(empty($key)) {
-			throw new MagratheaApiException("Api Key cannot be empty", true, 500, $post);
+			throw new MagratheaApiException("Api Key cannot be empty", true, 500);
 		}
 		$apiK = $keyControl->GetByKey($key);
 		if(empty($apiK->id)) {
-			throw new MagratheaApiException("Api Key is invalid: [".$key."]", true, 500, $post);
+			throw new MagratheaApiException("Api Key is invalid: [".$key."]", true, 500);
 		}
 		return $apiK;
 	}
 
 	public function Upload($params) {
 		$post = $this->GetPost();
+		if($params["key"]) {
+			$keyVal = $params["key"];
+		}	else {
+			$keyVal = @$post["key"];
+		}
+		try {
+			$key = $this->GetApiKeyByValue($keyVal);
+			return $this->UploadWithKey($key);
+		} catch(\Exception $e) {
+			throw $e;
+		}
+	}
+
+	public function UploadWithKey($key) {
 		$uploader = new ImageUploader();
 		try {
-			$key = $this->GetApiKeyByPost($post);
 			$uploader->SetKey($key);
 			if(empty($_FILES)) {
-				throw new MagratheaApiException("File not received", true, 500, $params);
+				throw new MagratheaApiException("File not received", true, 500);
 			}
 			$uploader->SetFile($_FILES["file"]);
 			return $uploader->Upload();
 		} catch(\Exception $e) {
 			throw $e;
+		}
+	}
+
+	public function Preview($params) {
+		$size = @$params["size"];
+		$size = strtolower($size);
+		if(empty($size)) $size = "thumb";
+		$debug = false;
+		if(@$_REQUEST["debug"]) {
+			$debug = true;
+		}
+		try {
+			if($size == "raw") return $this->ViewRaw($params);
+
+			$image = $this->GetById($params);
+			$viewer = new ImageViewer($image);
+			$viewer->DontSave();
+			if($debug) {
+				$viewer->Debug();
+			}
+
+			if($size == "thumb") {
+				$viewer->Thumb();
+			} else {
+				$stretch = false;
+				if (@$_REQUEST["stretch"]) {
+					$stretch = true;
+				}
+				$sizes = explode('x', $size);
+				$viewer->Size($sizes[0], $sizes[1], $stretch);
+			}
+			if($debug) {
+				return $viewer->GetResizerDebug();
+			}
+			$viewer->ViewGD();
+		} catch(\Exception $ex) {
+			throw new MagratheaApiException($ex->getMessage(), true, 500);
 		}
 	}
 

@@ -20,6 +20,13 @@ class MagratheaImagesApi extends MagratheaApi {
 	}
 	public function Initialize() {
 		\Magrathea2\MagratheaPHP::Instance()->StartDb();
+		$this->AllowAll();
+		$this->AddAcceptHeaders([
+			"Authorization",
+			"Access-Control-Allow-Origin",
+			"cache-control",
+			"x-requested-with",
+		]);
 		$this->SetAuth();
 		$this->SetUrl();
 		$this->AddApikey();
@@ -48,10 +55,14 @@ class MagratheaImagesApi extends MagratheaApi {
 	private function AddImages() {
 		$api = new ImagesApi();
 		$this->Add("POST", "upload", $api, "Upload", self::OPEN);
+		$this->Add("POST", "key/:key/upload", $api, "Upload", self::OPEN);
 		$this->Add("GET", "image/:id/details", $api, "ViewImageDetails", self::OPEN);
 		$this->Add("GET", "image/:id", $api, "ViewImage", self::OPEN);
-		$this->Add("GET", "image/:id/raw", $api, "ViewImage", self::OPEN);
+		$this->Add("GET", "image/:id/x/:size", $api, "ViewImage", self::OPEN);
+		$this->Add("GET", "image/:id/raw", $api, "ViewRaw", self::OPEN);
 		$this->Add("GET", "image/:id/thumb", $api, "ViewThumb", self::OPEN);
+		$this->Add("GET", "image/:id/preview/:size", $api, "Preview", self::OPEN, "Gets the image in the given size without saving it");
+		$this->Add("GET", "image/:id/debug/:size", $api, "DebugResize", self::OPEN);
 	}
 
 }

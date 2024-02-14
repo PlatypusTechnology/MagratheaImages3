@@ -6,9 +6,13 @@ include("shared/Helper.php");
 try {
 	Magrathea2\MagratheaPHP::Instance()
 		->AppPath(realpath(dirname(__FILE__)))
-		->AddCodeFolder("appConfig")
+		->AddCodeFolder(
+			"admin",
+			"admin/GeneratedFileManager",
+			"admin/MediaManager"
+		)
 		->AddFeature("Apikey", "Images")
-		->Debug()
+//		->Debug()
 //		->Dev()
 //		->StartDB()
 		->Load();

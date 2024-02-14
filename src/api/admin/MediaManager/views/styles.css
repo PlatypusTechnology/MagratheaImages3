@@ -1,0 +1,12 @@
+.action {
+	cursor: pointer;
+}
+
+.img-preview-box {
+	max-width: 100%;
+	overflow: scroll;
+}
+
+#upload-response {
+	height: 150px;
+}

@@ -11,6 +11,7 @@ class ImageUploader {
 
 	public $file = [];
 	public Apikey|null $key = null;
+	public $extensions = ["jpg", "jpeg", "png", "bmp", "webp", "wbmp"];
 
 	public function SetKey(Apikey $key): ImageUploader {
 		$this->key = $key;
@@ -25,8 +26,7 @@ class ImageUploader {
 	}
 
 	public function ValidateExtension($ext) {
-		$extensions = ["jpg", "jpeg", "png", "bmp", "webp", "wbmp", "bmp"];
-		return in_array($ext, $extensions);
+		return in_array($ext, $this->extensions);
 	}
 
 	public function Upload(): array {
@@ -42,8 +42,8 @@ class ImageUploader {
 		}
 		try {
 			$image = new Images();
-			$image->folder = $this->key->GetDestinationFolder();
-			$image->upload_key = $this->key->GetKey();
+			$image->folder = $this->key->folder;
+			$image->upload_key = $this->key->GetID();
 			$image->FromUploadFile($this->file);
 
 			if(!$this->ValidateExtension($image->extension)) {
@@ -81,7 +81,7 @@ class ImageUploader {
 	}
 
 	public function GetDestination(): string {
-		return PathManager::GetRawFolder($this->key->GetDestinationFolder());
+		return PathManager::GetRawFolder($this->key->folder);
 	}
 
 	public function ValidateUpload(): bool {

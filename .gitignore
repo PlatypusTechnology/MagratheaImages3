@@ -4,6 +4,7 @@ magrathea.conf
 logs/*.txt
 plugins
 database/*.sql
+medias/*
 
 docker/.env
 vendor

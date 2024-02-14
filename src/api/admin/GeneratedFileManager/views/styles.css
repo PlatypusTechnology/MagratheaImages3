@@ -1,0 +1,9 @@
+.li-file {
+	cursor: pointer;
+	border-bottom: 1px solid var(--primary);
+}
+
+.actions {
+	float: right;
+	margin-right: 50px;
+}

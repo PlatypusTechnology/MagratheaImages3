@@ -1,12 +1,13 @@
 <?php
 
-use Magrathea2\Admin\AdminManager;
-
 include("_inc.php");
-include("ImagesAdmin.php");
+include("admin/MagratheaImagesAdmin.php");
+
+use Magrathea2\Admin\AdminManager;
+use MagratheaImages3\MagratheaImagesAdmin;
 
 try {
-	AdminManager::Instance()->Start(new ImagesAdmin());
+	AdminManager::Instance()->Start(new MagratheaImagesAdmin());
 } catch(Exception $ex) {
 	\Magrathea2\p_r($ex);
 }

@@ -1,0 +1,6 @@
+[2024-02-08 11:52:39] = query run: [SELECT apikey.id AS 'apikey/id', apikey.val AS 'apikey/val', apikey.folder AS 'apikey/folder', apikey.uses AS 'apikey/uses', apikey.usage_limit AS 'apikey/usage_limit', apikey.expiration AS 'apikey/expiration', apikey.active AS 'apikey/active', apikey.created_at AS 'apikey/created_at', apikey.updated_at AS 'apikey/updated_at' FROM apikey WHERE apikey.id = 1]
+[2024-02-08 11:52:39] = query run: [SELECT * FROM images WHERE  `upload_key` = '1'  ORDER BY created_at DESC]
+[2024-02-08 11:55:02] = query run: [SELECT apikey.id AS 'apikey/id', apikey.val AS 'apikey/val', apikey.folder AS 'apikey/folder', apikey.uses AS 'apikey/uses', apikey.usage_limit AS 'apikey/usage_limit', apikey.expiration AS 'apikey/expiration', apikey.active AS 'apikey/active', apikey.created_at AS 'apikey/created_at', apikey.updated_at AS 'apikey/updated_at' FROM apikey WHERE apikey.id = 1]
+[2024-02-08 11:55:02] = query run: [SELECT * FROM images WHERE  `upload_key` = '1'  ORDER BY created_at DESC]
+[2024-02-12 03:21:22] = Magrathea2\Exceptions\MagratheaException Catch: [2024-02-12_032122] = Could not find class [Helper]. Are the code folders correct?
+[2024-02-12 03:21:51] = Magrathea2\Exceptions\MagratheaException Catch: [2024-02-12_032151] = filee does not exists: [/var/www/medias/default/generateda/5_caprese_logo_thumb.jpeg]
