@@ -15,6 +15,17 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 		return $this;
 	}
 
+	public function FromUrl($url): Images {
+		$urlPieces = explode('/', $url);
+		$file = end($urlPieces);
+		$file = str_replace(" ", "_", $file);
+		$this->SetFilename($file);
+		$pieces = explode(".", $file);
+		$this->extension = array_pop($pieces);
+		$this->name = implode(" ", $pieces);
+		return $this;
+	}
+
 	/**
 	 * Sets filename for image
 	 * @param 	string 		$name 		file name

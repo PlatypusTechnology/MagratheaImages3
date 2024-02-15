@@ -2,7 +2,6 @@
 
 namespace MagratheaImages3\Images;
 
-use Magrathea2\Debugger;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\ApikeyControl;
@@ -112,9 +111,14 @@ class ImagesApi extends MagratheaApiControl {
 		}	else {
 			$keyVal = @$post["key"];
 		}
+		$url = @$post["url"];
 		try {
 			$key = $this->GetApiKeyByValue($keyVal);
-			return $this->UploadWithKey($key);
+			if($url) {
+				return $this->UploadUrlWithKey($key, $url);
+			} else {
+				return $this->UploadWithKey($key);
+			}
 		} catch(\Exception $e) {
 			throw $e;
 		}
@@ -129,6 +133,16 @@ class ImagesApi extends MagratheaApiControl {
 			}
 			$uploader->SetFile($_FILES["file"]);
 			return $uploader->Upload();
+		} catch(\Exception $e) {
+			throw $e;
+		}
+	}
+
+	public function UploadUrlWithKey($key, string $url) {
+		$uploader = new ImageUploader();
+		try {
+			$uploader->SetKey($key);
+			return $uploader->UploadUrl($url);
 		} catch(\Exception $e) {
 			throw $e;
 		}

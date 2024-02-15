@@ -55,7 +55,9 @@ class MagratheaImagesApi extends MagratheaApi {
 	private function AddImages() {
 		$api = new ImagesApi();
 		$this->Add("POST", "upload", $api, "Upload", self::OPEN);
+		$this->Add("POST", "upload-url", $api, "Upload", self::OPEN);
 		$this->Add("POST", "key/:key/upload", $api, "Upload", self::OPEN);
+		$this->Add("POST", "key/:key/upload-url", $api, "Upload", self::OPEN);
 		$this->Add("GET", "image/:id/details", $api, "ViewImageDetails", self::OPEN);
 		$this->Add("GET", "image/:id", $api, "ViewImage", self::OPEN);
 		$this->Add("GET", "image/:id/x/:size", $api, "ViewImage", self::OPEN);

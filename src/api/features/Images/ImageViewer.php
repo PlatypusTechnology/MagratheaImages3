@@ -11,6 +11,7 @@ class ImageViewer {
 
 	public Images $image;
 	public string $file;
+	public bool $fileExists = false;
 	public ?ImageResizer $resizer = null;
 	public bool $saveImage = true;
 	public bool $debugOn = false;
@@ -115,6 +116,10 @@ class ImageViewer {
 	}
 
 	public function ViewGD() {
+		if($this->resizer == null) {
+			if($this->fileExists) return $this->ViewFile();
+			else throw new MagratheaApiException("Resizer is empty and file does not exists", 500);
+		} 
 		return $this->DisplayFromGD($this->resizer->GetGD(), $this->resizer->extension);
 	}
 
@@ -166,7 +171,8 @@ class ImageViewer {
 
 	public function ShouldGenerate() {
 		if($this->ForceGeneration()) return true;
-		return !file_exists($this->file);
+		$this->fileExists = file_exists($this->file);
+		return !$this->fileExists;
 	}
 	private function DebugView(): array {
 		$img = $this->image;

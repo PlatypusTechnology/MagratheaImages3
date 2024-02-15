@@ -53,3 +53,17 @@ function loadDropzone() {
 	};
 	Dropzone.discover();
 }
+
+function uploadUrl(el) {
+	let data = getFormDataFromElement(el);
+	console.info("uploading from url", data);
+	let api = data['endpoint'];
+	let url = data['image_url'];
+	ajax("POST", api, { url })
+	.then(rs => showOn("#upload-response", JSON.stringify(rs)));
+	// callApi("Images", "Upload", { 
+	// 	key: getSelectedApiKey(),
+	// 	url: data['image_url'],
+	// })
+	// .then(rs => showOn("#upload-response", JSON.stringify(rs)));
+}
