@@ -156,7 +156,8 @@ class ImageResizer {
 			$height = $this->height;
 			$width = ceil($height * $originalAspect["ratio"]);
 			$this->SimpleResize($width, $height);
-			$x = $this->width / 4;
+			$middle = $width / 2;
+			$x = $middle - ($this->width / 2);
 			$this->SimpleCrop($x, 0);
 //			$this->cropAlign('center', 'top');
 		}
