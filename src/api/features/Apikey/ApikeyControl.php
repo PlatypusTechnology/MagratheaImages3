@@ -10,7 +10,7 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 		$key = $this->createRandomStr($length);
 		if(!$this->assertKeyNotInUse($key)) {
 			$tries = $tries + 1;
-			if($tries > 5) return "incorrect key creation (after ".$tries." tries)";
+			if($tries > 5) throw new MagratheaModelException("incorrect key creation (after ".$tries." tries)");
 			return $this->createKey($tries);
 		}
 		return $key;

@@ -5,7 +5,7 @@ namespace MagratheaImages3\Images;
 use Magrathea2\Exceptions\MagratheaApiException;
 use MagratheaImages3\Apikey\Apikey;
 use Magrathea2\Exceptions\MagratheaException;
-use Magrathea2\Helper;
+use Magrathea2\MagratheaHelper;
 use Magrathea2\Logger;
 
 class ImageUploader {
@@ -54,7 +54,7 @@ class ImageUploader {
 			$image = $this->CreateImage()->FromUploadFile($this->file);
 			$this->ValidateExtension($image->extension);
 
-			$finalName = Helper::EnsureTrailingSlash($path).$image->filename;
+			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
 			move_uploaded_file($_FILES["file"]["tmp_name"], $finalName);
 			if(file_exists($finalName)){
 				list($width, $height) = getimagesize($finalName);
@@ -94,7 +94,7 @@ class ImageUploader {
 			$image = $this->CreateImage()->FromUrl($url);
 			$this->ValidateExtension($image->extension);
 
-			$finalName = Helper::EnsureTrailingSlash($path).$image->filename;
+			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
 //			return " ... uploading ".$url." to ".$finalName;
 			file_put_contents($finalName, $this->GetExternalContent($url));
 			if(file_exists($finalName)){

@@ -3,7 +3,7 @@
 namespace MagratheaImages3\Images;
 
 use Magrathea2\Exceptions\MagratheaConfigException;
-use Magrathea2\Helper;
+use Magrathea2\MagratheaHelper;
 use MagratheaImages3\Apikey\Apikey;
 
 class FileManager {
@@ -11,7 +11,7 @@ class FileManager {
 	private array $extensions;
 	public function SetPath(string $path): FileManager {
 		if(!file_exists($path)) throw new MagratheaConfigException("Folder does not exist: ", $path);
-		$this->path = Helper::EnsureTrailingSlash($path);
+		$this->path = MagratheaHelper::EnsureTrailingSlash($path);
 		return $this;
 	}
 

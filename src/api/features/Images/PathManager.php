@@ -4,7 +4,7 @@ namespace MagratheaImages3\Images;
 
 use Magrathea2\ConfigApp;
 use Magrathea2\Singleton;
-use Magrathea2\Helper;
+use Magrathea2\MagratheaHelper;
 use Magrathea2\Logger;
 
 
@@ -12,7 +12,7 @@ class PathManager {
 
 	public static function GetMediaFolder($apiFolder): string {
 		$folder = ConfigApp::Instance()->Get("medias_path");
-		return Helper::EnsureTrailingSlash($folder).$apiFolder."/";
+		return MagratheaHelper::EnsureTrailingSlash($folder).$apiFolder."/";
 	}
 
 	public static function GetRawFolder($folder): string {

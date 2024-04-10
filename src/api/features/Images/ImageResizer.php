@@ -186,17 +186,19 @@ class ImageResizer {
 			throw new MagratheaApiException("Could not save generated image; destination folder is invalid", true, 500, $this->newFile);
 		}
 		try {
-			$quality = $this->quality;
 			$gd = $this->newGdImage;
 			$fileName = $this->newFile;
 			switch($this->extension) {
 				case "png":
+					$quality = floor($this->quality/10) - 1;
 					return imagepng($gd, $fileName, $quality);
 				case "jpg":
 				case "jpeg":
 				default:
+					$quality = $this->quality;
 					return imagejpeg($gd, $fileName, $quality);
 				case "webp":
+					$quality = $this->quality;
 					return imagewebp($gd, $fileName, $quality);
 				case "wbmp":
 					return imagewbmp($gd, $fileName);

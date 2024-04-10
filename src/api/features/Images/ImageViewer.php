@@ -25,6 +25,9 @@ class ImageViewer {
 		return $this;
 	}
 	public function GetResizerDebug(): array {
+		if(!$this->resizer) {
+			return [];
+		}
 		return $this->resizer->GetDebug();
 	}
 	public function StartResizer(): ImageResizer {
@@ -50,7 +53,7 @@ class ImageViewer {
 		self::HeaderExtension($extension);
 		ob_start();
 		switch($extension) {
-			case "jpg": case "jpeg": imagejpeg($gd); break;
+			case "jpg": case "jpeg": default: imagejpeg($gd); break;
 			case "png": imagepng($gd); break;
 			case "bmp": imagebmp($gd); break;
 			case "gif": imagegif($gd); break;
