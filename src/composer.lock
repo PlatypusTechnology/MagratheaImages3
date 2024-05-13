@@ -199,12 +199,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PlatypusTechnology/MagratheaPHP2.git",
-                "reference": "b50e11d856d9514182cb70497548832dc8e47f59"
+                "reference": "31d831c5ae7581f2950505a5c241b179fcaaa131"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PlatypusTechnology/MagratheaPHP2/zipball/b50e11d856d9514182cb70497548832dc8e47f59",
-                "reference": "b50e11d856d9514182cb70497548832dc8e47f59",
+                "url": "https://api.github.com/repos/PlatypusTechnology/MagratheaPHP2/zipball/31d831c5ae7581f2950505a5c241b179fcaaa131",
+                "reference": "31d831c5ae7581f2950505a5c241b179fcaaa131",
                 "shasum": ""
             },
             "require": {
@@ -241,7 +241,7 @@
                 "issues": "https://github.com/PlatypusTechnology/MagratheaPHP2/issues",
                 "source": "https://github.com/PlatypusTechnology/MagratheaPHP2/tree/main"
             },
-            "time": "2024-04-10T04:46:25+00:00"
+            "time": "2024-05-12T18:24:28+00:00"
         },
         {
             "name": "scssphp/scssphp",

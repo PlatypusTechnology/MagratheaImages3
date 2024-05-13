@@ -12,7 +12,7 @@ $apiKeys = $control->GetAll();
 $folders = array_map(function($k) {
 	return [
 		"id" => $k->id,
-		"name" => "ID#".$k->id." key:[".$k->val."] / folder: ".$k->folder,
+		"name" => "ID#".$k->id." public key:[".$k->public_key."] / folder: ".$k->folder,
 	];
 }, $apiKeys);
 

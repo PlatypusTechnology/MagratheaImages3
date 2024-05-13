@@ -1,28 +1,24 @@
 <?php
 namespace MagratheaImages3\Apikey;
 
+use MagratheaImages3\Helper;
 use MagratheaImages3\Images\PathManager;
 
 use function Magrathea2\now;
 
 class Apikey extends \MagratheaImages3\Apikey\Base\ApikeyBase {
 
-	public function GetKey(): string {
-		return $this->val;
+	public function GetKey(bool $private = true): string {
+		return $private ? $this->GetPrivateKey() : $this->GetPublicKey();
 	}
-
-	public function InitializeKey() {
-		if( empty($this->val) ) {
-			$control = new ApikeyControl();
-			$key = $control->createKey(4);
-			$this->val = $key;
-		}
-	}
+	public function GetPublicKey(): string { return $this->public_key; }
+	public function GetPrivateKey(): string { return $this->private_key; }
 
 	public function Normalize(): Apikey {
 		if(!$this->uses) $this->uses = 0;
 		if(!$this->usage_limit) $this->usage_limit = 0;
 		if(empty($this->expiration)) $this->expiration = null;
+		$this->folder = Helper::Clean($this->folder);
 		return $this;
 	}
 

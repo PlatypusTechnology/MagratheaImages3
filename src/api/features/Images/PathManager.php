@@ -26,10 +26,11 @@ class PathManager {
 	public static function CheckDestinationFolder($path): array {
 		if (is_dir($path)) return [ "success" => true, "path" => $path ];
 		try {
-			if(mkdir($path, 0755, true)) {
+			if(@mkdir($path, 0755, true)) {
 				return [ "success" => true, "path" => $path ];
 			} else {
-				return [ "success" => false, "error" => "unknown error", "path" => $path ];
+				$error = error_get_last();
+				return [ "success" => false, "error" => $error["message"], "path" => $path ];
 			}
 			if(!is_writeable($path)){
 				return [ "success" => false, "error" => "destination path has no writing permission", "path" => $path ];

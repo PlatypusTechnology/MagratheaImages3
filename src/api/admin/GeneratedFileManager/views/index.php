@@ -14,7 +14,7 @@ $apiKeys = $control->GetAll();
 $folders = array_map(function($k) {
 	return [
 		"id" => $k->id,
-		"name" => $k->folder." [".$k->val."]",
+		"name" => $k->folder." [".$k->private_key."]",
 	];
 }, $apiKeys);
 
@@ -44,7 +44,7 @@ $folders = array_map(function($k) {
 		</div>
 	</div>
 	<div class="row">
-		<div class="col-12" id="folder-response"></div>
-		<div class="col-12" id="folder-image-viewer"></div>
+		<div class="col-6" id="folder-response"></div>
+		<div class="col-6" id="folder-image-viewer"></div>
 	</div>
 </div>

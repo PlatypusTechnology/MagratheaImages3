@@ -2,15 +2,21 @@
 
 namespace MagratheaImages3\Images;
 
+use Magrathea2\Config;
 use Magrathea2\Exceptions\MagratheaApiException;
+use Magrathea2\Exceptions\MagratheaException;
+use Magrathea2\MagratheaApi;
 use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\ApikeyControl;
 
 class ImagesApi extends MagratheaApiControl {
 
+	private bool $isSecure = false;
+
 	public function __construct() {
 		$this->model = get_class(new Images());
 		$this->service = new ImagesControl();
+		$this->isSecure = boolval(Config::Instance()->Get("secure_api"));
 	}
 
 	public function GetById($params) {
@@ -18,6 +24,13 @@ class ImagesApi extends MagratheaApiControl {
 			$id = $params["id"];
 			$img = new Images($id);
 			if(empty($img->name)) throw new MagratheaApiException("Image not found", true, 404, $params);
+			if($this->isSecure) {
+				$key = @$params["key"];
+				if(empty($key)) throw new MagratheaApiException("Key is invalid");
+				$keyControl = new ApikeyControl();
+				$imgKey = $keyControl->GetCached($img->upload_key);
+				if($imgKey != $key) throw new MagratheaApiException("Key-Image relation invalid");
+			}
 			return $img;
 		} catch(\Exception $e) {
 			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);

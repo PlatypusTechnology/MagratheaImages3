@@ -10,3 +10,8 @@
 #upload-response {
 	height: 200px;
 }
+
+.medias-table {
+	max-height: 600px;
+	overflow-y: scroll;
+}

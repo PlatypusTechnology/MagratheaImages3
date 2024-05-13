@@ -16,4 +16,11 @@ class Helper {
 	public static function IsGDWorking(): bool {
 		return function_exists('gd_info');
 	}
+
+	public static function Clean($str): string {
+		$str =  iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);
+		$str = preg_replace("#[[:punct:]]#", "-", $str);
+		$str = preg_replace('/\s+/', '_', $str);
+		return $str;
+	}
 }

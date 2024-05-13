@@ -27,3 +27,12 @@ function createKey(el) {
 		})
 		.then(listKeys);
 }
+
+function cache() {
+	callFeature("AdminApikey", "Cache")
+		.then(rs => showOn("#container-keys-rs", rs));
+}
+function createCache() {
+	callFeature("AdminApikey", "CreateCache")
+		.then(rs => showOn("#container-keys-rs", rs));
+}

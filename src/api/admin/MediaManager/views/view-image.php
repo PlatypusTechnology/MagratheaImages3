@@ -14,14 +14,22 @@ $elements = AdminElements::Instance();
 	</div>
 	<div class="card-body">
 		<div class="row">
-			<div class="col-6">
+			<div class="col-12">
 				thumb:<br/>
 				<img src="<?=$imgApi?>" />
 				<hr class="mb-1"/>
-				<?
-$elements->Button("View Raw", "openPreview(".$id.", 'raw');", ['btn-primary', 'no-margin']);
-$elements->Button("View Thumb", "openPreview(".$id.", 'thumb');", ['btn-primary', 'no-margin']);
+			</div>
+			<div class="col-6">
+			<?
+$elements->Button("View Raw", "openPreview(".$id.", 'raw');", ['btn-primary', 'margin-label']);
+$elements->Button("View Thumb", "openPreview(".$id.", 'thumb');", ['btn-primary', 'margin-label']);
 				?>
+			</div>
+			<div class="col-6">
+			<?
+$elements->Input("disabled", "public_key", "public_key", $key);
+				?>
+			</div>
 				<hr class="mt-1 mb-1"/>
 				<?
 $form = new AdminForm();
@@ -30,7 +38,7 @@ $form->Build([
 		'key' => "id",
 		'type' => "hidden",
 		'size' => "col-0",
-	],	
+	],
 	[
 		'key' => "w",
 		'type' => "text",
@@ -55,7 +63,7 @@ $form->Print();
 
 				?>
 			</div>
-			<div class="col-6">
+			<div class="col-12 mt-2">
 				<pre><? echo $image; ?></pre>
 			</div>
 		</div>

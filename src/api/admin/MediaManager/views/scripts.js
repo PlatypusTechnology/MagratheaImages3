@@ -32,7 +32,8 @@ function viewMedia(id) {
 }
 
 function openPreview(id, size) {
-	callFeature(mediaFeatureName, "Preview", "GET", { id, size })
+	const key = $("#public_key").val();
+	callFeature(mediaFeatureName, "Preview", "GET", { key, id, size })
 		.then(rs => addTo("#media-image-viewer", rs));
 }
 

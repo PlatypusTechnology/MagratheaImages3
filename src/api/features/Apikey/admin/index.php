@@ -22,7 +22,8 @@ $feature = AdminManager::Instance()->GetActiveFeature();
 <div class="row">
 	<div class="col-12 right">
 		<?
-		$elements->Button("New Api Key", "newKey()", ["btn-success"])
+		$elements->Button("New Api Key", "newKey()", ["btn-success"]);
+		$elements->Button("Cache", "cache()", ["btn-warning"]);
 		?>
 	</div>
 </div>

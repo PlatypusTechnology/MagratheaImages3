@@ -11,16 +11,18 @@ $tableData = [
 	],
 	[
 		"title" => "name",
-		"key" => "name"
+		"key" => function($i) {
+			return mb_strimwidth($i->name, 0, 10, "...");
+		}
 	],
 	[
 		"title" => "extension",
 		"key" => "extension"
 	],
-	[
-		"title" => "filename",
-		"key" => "extension"
-	],
+	// [
+	// 	"title" => "filename",
+	// 	"key" => "filename"
+	// ],
 	[
 		"title" => "dimensions",
 		"key" => function($i) {
@@ -45,15 +47,17 @@ $tableData = [
 ?>
 
 <div class="row">
-	<div class="col-12">
+	<div class="col-6">
 		<div class="card">
-			<div class="card-header">Medias</div>
-			<div class="card-body">
+			<div class="card-header">
+				Medias [<?=$apikey->public_key?>]
+			</div>
+			<div class="card-body medias-table">
 				<?
 				$elements->Table($images, $tableData);
 				?>
 			</div>
 		</div>
 	</div>
-	<div class="col-12" id="media-image-viewer"></div>
+	<div class="col-6" id="media-image-viewer"></div>
 </div>

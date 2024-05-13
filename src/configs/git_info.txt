@@ -1,0 +1,5 @@
+commit 2a9345316c5b5b99b120043162696b6df55744d7
+Author: Paulo Martins <paulovelho@paulovelho.com>
+Date:   Wed Apr 10 10:43:29 2024 -0300
+
+    fixing thumb generation sizes

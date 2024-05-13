@@ -3,10 +3,10 @@
 namespace MagratheaImages3\Apikey;
 
 use Exception;
+use Magrathea2\Admin\AdminElements;
 use Magrathea2\Admin\AdminFeature;
 use Magrathea2\Admin\AdminManager;
 use Magrathea2\Admin\iAdminFeature;
-use MagratheaContacts\Source\SourceControl;
 
 class ApikeyAdmin extends AdminFeature implements iAdminFeature { 
 
@@ -17,6 +17,7 @@ class ApikeyAdmin extends AdminFeature implements iAdminFeature {
 		parent::__construct();
 		$this->SetClassPath(__DIR__);
 		$this->AddJs(__DIR__."/admin/scripts.js");
+		$this->AddCSS(__DIR__."/admin/styles.css");
 	}
 
 	public function HasEditPermission($user): bool {
@@ -42,18 +43,20 @@ class ApikeyAdmin extends AdminFeature implements iAdminFeature {
 	public function Form() {
 		$id = @$_GET["id"];
 		$key = new Apikey($id);
-		$key->InitializeKey();
+		$control = new ApikeyControl();
+		$control->initializeKeys($key);
 		include("admin/form.php");
 	}
 
 	public function Create() {
 		$id = @$_POST["id"];
-		$k = new Apikey($id);
-		$k = $k->Assign($_POST);
-		$k->active = true;
+		$control = new ApikeyControl();
 		try {
-			$k->Normalize();
-			$k->Save();
+			if(!empty($id)) {
+				$k = $control->Update($id, $_POST);
+			} else {
+				$k = $control->Create($_POST);
+			}
 		} catch(Exception $ex) {
 			echo json_encode([
 				"success" => false,
@@ -66,6 +69,21 @@ class ApikeyAdmin extends AdminFeature implements iAdminFeature {
 			"data" => $k,
 			"type" => ($id ? "update" : "insert")
 		]);
+	}
+
+	public function Cache() {
+		include("admin/cache.php");
+	}
+
+	public function CreateCache() {
+		$control = new CacheClassCreator();
+		$elements = AdminElements::Instance();
+		if($control->Generate()) {
+			$elements->Alert("File generated!", "success");
+		} else {
+			$elements->Alert("Error creating file!", "danger");
+		}
+		return $this->Cache();
 	}
 
 }

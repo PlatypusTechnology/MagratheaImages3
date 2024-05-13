@@ -7,3 +7,9 @@
 	float: right;
 	margin-right: 50px;
 }
+
+#files-response {
+	margin-top: 20px;
+	max-height: 400px;
+	overflow-y: scroll;
+}

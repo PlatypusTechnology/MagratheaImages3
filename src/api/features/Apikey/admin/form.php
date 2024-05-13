@@ -8,10 +8,16 @@ $formData = [
 		"size" => "col-1",
 	],
 	[
-		"name" => "Key:",
-		"key" => "val",
+		"name" => "Private Key:",
+		"key" => "private_key",
 		"type" => "disabled",
-		"size" => "col-3",
+		"size" => "col-2",
+	],
+	[
+		"name" => "Public Key:",
+		"key" => "public_key",
+		"type" => "disabled",
+		"size" => "col-2",
 	],
 	[
 		"size" => "col-2",
@@ -26,10 +32,10 @@ $formData = [
 		"name" => "Expiration:",
 	],
 	[
-		"size" => "col-2",
+		"size" => "col-1",
 		"type" => "text",
 		"key" => "usage_limit",
-		"name" => "Limit of uses:",
+		"name" => "Limit:",
 	],
 	[
 		"name" => "Save",
@@ -39,6 +45,7 @@ $formData = [
 		"action" => "createKey(this)",
 	]
 ];
+print_r($key->folder);
 ?>
 <div class="card">
 	<div class="card-header">

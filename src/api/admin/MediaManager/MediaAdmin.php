@@ -6,6 +6,7 @@ use Magrathea2\Admin\AdminFeature;
 use Magrathea2\Admin\iAdminFeature;
 use Magrathea2\Config;
 use MagratheaImages3\Apikey\Apikey;
+use MagratheaImages3\Apikey\ApikeyControl;
 use MagratheaImages3\Images\Images;
 
 class MediaAdmin extends AdminFeature implements iAdminFeature {
@@ -31,17 +32,21 @@ class MediaAdmin extends AdminFeature implements iAdminFeature {
 
 	public function ViewImage() {
 		$id = $_GET["id"];
-		$apiUrl = Config::Instance()->Get("app_url");
-		$api = "/image/".$id;
-		$imgApi = $apiUrl.$api."/thumb";
 		$image = new Images($id);
+		$apiControl = new ApikeyControl();
+		$key = $apiControl->GetCached($image->upload_key);
+		$apiUrl = Config::Instance()->Get("app_url");
+		$api = "/image/".$key."/".$id;
+		$imgApi = $apiUrl.$api."/thumb";
 		include("views/view-image.php");
 	}
 
 	public function Preview() {
 		$id = $_GET["id"];
 		$size = $_GET["size"];
-		$api = Config::Instance()->Get("app_url")."/image/".$id."/preview/".$size;
+		$key = $_GET["key"];
+		$endpoint = "/image/".$key."/".$id."/preview/".$size;
+		$api = Config::Instance()->Get("app_url").$endpoint;
 		include("views/preview.php");
 	}
 

@@ -5,6 +5,7 @@ namespace MagratheaImages3;
 use AuthApi;
 use Magrathea2\Config;
 use Magrathea2\MagratheaApi;
+use Magrathea2\MagratheaPHP;
 use MagratheaImages3\Apikey\ApikeyApi;
 use MagratheaImages3\Images\ImagesApi;
 
@@ -28,9 +29,14 @@ class MagratheaImagesApi extends MagratheaApi {
 			"x-requested-with",
 		]);
 		$this->SetAuth();
+		$this->Version();
 		$this->SetUrl();
 		$this->AddApikey();
 		$this->AddImages();
+		$this->Add("POST", "clean", null, function($params) {
+			$q = @$_POST["q"];
+			return Helper::Clean($q);
+		}, self::OPEN);
 	}
 
 	private function SetAuth() {
@@ -50,6 +56,8 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("GET", "keys", $api, "GetAll", self::LOGGED);
 		$this->Add("GET", "key/:key/view", $api, "GetByKey", self::OPEN);
 		$this->Add("GET", "key/:key/images", $api, "ViewImages", self::OPEN);
+		$this->Add("GET", "key/:id/cached", $api, "GetCached", self::LOGGED);
+		$this->Add("POST", "key/create", $api, "NewKey", self::OPEN);
 	}
 
 	private function AddImages() {
@@ -58,6 +66,15 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("POST", "upload-url", $api, "Upload", self::OPEN);
 		$this->Add("POST", "key/:key/upload", $api, "Upload", self::OPEN);
 		$this->Add("POST", "key/:key/upload-url", $api, "Upload", self::OPEN);
+		if(Config::Instance()->Get("secure_api")) {
+			$this->SecureImages();
+		} else {
+			$this->PublicImages();
+		}
+	}
+
+	private function PublicImages() {
+		$api = new ImagesApi();
 		$this->Add("GET", "image/:id/details", $api, "ViewImageDetails", self::OPEN);
 		$this->Add("GET", "image/:id", $api, "ViewImage", self::OPEN);
 		$this->Add("GET", "image/:id/x/:size", $api, "ViewImage", self::OPEN);
@@ -65,6 +82,30 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("GET", "image/:id/thumb", $api, "ViewThumb", self::OPEN);
 		$this->Add("GET", "image/:id/preview/:size", $api, "Preview", self::OPEN, "Gets the image in the given size without saving it");
 		$this->Add("GET", "image/:id/debug/:size", $api, "DebugResize", self::OPEN);
+	}
+	private function SecureImages() {
+		$api = new ImagesApi();
+		$this->Add("GET", "image/:key/:id/details", $api, "ViewImageDetails", self::OPEN);
+		$this->Add("GET", "image/:key/:id", $api, "ViewImage", self::OPEN);
+		$this->Add("GET", "image/:key/:id/x/:size", $api, "ViewImage", self::OPEN);
+		$this->Add("GET", "image/:key/:id/raw", $api, "ViewRaw", self::OPEN);
+		$this->Add("GET", "image/:key/:id/thumb", $api, "ViewThumb", self::OPEN);
+		$this->Add("GET", "image/:key/:id/preview/:size", $api, "Preview", self::OPEN, "Gets the image in the given size without saving it");
+		$this->Add("GET", "image/:key/:id/debug/:size", $api, "DebugResize", self::OPEN);
+	}
+
+	private function Version() {
+		$this->Add("GET", "version", null, function($params) {
+			$configRoot = MagratheaPHP::Instance()->getConfigRoot();
+			require $configRoot."/version.php";
+			return [
+				"api" => "Magrathea Images 3",
+				"version" => Config::Instance()->Get("version"),
+				"secure" => Config::Instance()->Get("secure_api"),
+				"environment" => Config::Instance()->GetEnvironment(),
+				...$version
+			];
+		}, self::OPEN);
 	}
 
 }

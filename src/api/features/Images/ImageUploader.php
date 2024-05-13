@@ -50,7 +50,7 @@ class ImageUploader {
 	public function Upload(): array {
 		try {
 			$path = $this->GetDestination();
-			$this->ValidadeDestination($path);
+			$this->ValidateDestination($path);
 			$image = $this->CreateImage()->FromUploadFile($this->file);
 			$this->ValidateExtension($image->extension);
 
@@ -90,7 +90,7 @@ class ImageUploader {
 		$url = strtok($url, '?');
 		try {
 			$path = $this->GetDestination();
-			$this->ValidadeDestination($path);
+			$this->ValidateDestination($path);
 			$image = $this->CreateImage()->FromUrl($url);
 			$this->ValidateExtension($image->extension);
 
@@ -129,7 +129,7 @@ class ImageUploader {
 		return PathManager::GetRawFolder($this->key->folder);
 	}
 
-	public function ValidadeDestination(string $path): bool {
+	public function ValidateDestination(string $path): bool {
 		$destinationOk = PathManager::CheckDestinationFolder($path);
 		if(!$destinationOk["success"]) {
 			throw new MagratheaApiException($destinationOk["error"], 500, $destinationOk["path"]);
