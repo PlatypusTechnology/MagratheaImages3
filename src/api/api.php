@@ -27,6 +27,7 @@ class MagratheaImagesApi extends MagratheaApi {
 			"Access-Control-Allow-Origin",
 			"cache-control",
 			"x-requested-with",
+			"Content-type",
 		]);
 		$this->SetAuth();
 		$this->Version();
@@ -100,10 +101,11 @@ class MagratheaImagesApi extends MagratheaApi {
 			require $configRoot."/version.php";
 			return [
 				"api" => "Magrathea Images 3",
-				"version" => Config::Instance()->Get("version"),
+				"version" => MagratheaPHP::Instance()->AppVersion(),
 				"secure" => Config::Instance()->Get("secure_api"),
 				"environment" => Config::Instance()->GetEnvironment(),
-				...$version
+				...$version,
+				"magrathea_version" => MagratheaPHP::Instance()->Version(),
 			];
 		}, self::OPEN);
 	}
