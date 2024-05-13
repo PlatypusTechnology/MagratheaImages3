@@ -6,6 +6,7 @@ use Exception;
 use GdImage;
 use Magrathea2\ConfigApp;
 use Magrathea2\Exceptions\MagratheaApiException;
+use Magrathea2\Exceptions\MagratheaException;
 use MagratheaImages3\Helper;
 use MagratheaImages3\Images\Images;
 
@@ -75,7 +76,15 @@ class ImageResizer {
 		if($w == 0) $w = $this->width;
 		if($h == 0) $h = $this->height;
 		if(empty($this->newGdImage)) $this->CreateBlank($w, $h);
-		$gd = $this->GetRawGD();
+		try {
+			$gd = @$this->GetRawGD();
+		} catch(\Exception $ex) {
+			throw new MagratheaException($ex->getMessage(), 500);
+		}
+		if(!$gd) {
+			$error = error_get_last();
+			throw new MagratheaException($error["message"], 500);
+		}
 		$created = imagecopyresampled(
 			$this->newGdImage, $gd,
 			0,0,0,0,
@@ -211,7 +220,7 @@ class ImageResizer {
 		}
 	}
 
-	public function GetRawGD(): GdImage {
+	public function GetRawGD(): GdImage|bool {
 		$this->PrintDebug("Getting gd for ".$this->extension." image; raw file: ".$this->rawFile);
 		if(!Helper::IsGDWorking()) {
 			throw new MagratheaApiException("GD lib is not installed", true, 500);
