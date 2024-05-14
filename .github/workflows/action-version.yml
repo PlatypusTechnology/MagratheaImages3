@@ -14,7 +14,7 @@ jobs:
       - name: Commit files
         run: |
           git add src/configs/git_info.txt
-          git add src/condigs/version.php
+          git add src/configs/version.php
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
