@@ -15,6 +15,7 @@ jobs:
         run: |
           git add src/configs/git_info.txt
           git add src/configs/version.php
+          git push
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
