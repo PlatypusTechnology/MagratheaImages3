@@ -13,7 +13,11 @@ jobs:
         shell: bash
       - name: Commit files
         run: |
+          git config --global user.email "paulovelho@paulovelho.com"
           git add src/configs/git_info.txt
           git add src/configs/version.php
-          git commit -m "github actions run-build-sh"
           git push
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+            path: $CSV_FILENAME
