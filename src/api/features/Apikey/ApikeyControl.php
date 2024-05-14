@@ -4,6 +4,7 @@ namespace MagratheaImages3\Apikey;
 use Exception;
 use Magrathea2\DB\Database;
 use Magrathea2\DB\Query;
+use Magrathea2\Errors\ErrorManager;
 use Magrathea2\Exceptions\MagratheaException;
 use Magrathea2\Exceptions\MagratheaModelException;
 use MagratheaImages3\Images\PathManager;
@@ -57,7 +58,12 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 	}
 
 	public function GetCached($id): string {
-		include(__DIR__."/cache/ApikeyCache.php");
+		$cache = @include(__DIR__."/cache/ApikeyCache.php");
+		if(!$cache) {
+			$message = "Apikey cache not generated";
+			ErrorManager::Instance()->DisplayMesage($message);
+			throw new MagratheaException($message);
+		}
 		return GetApiKeyCached($id);
 	}
 
