@@ -3,6 +3,13 @@ namespace MagratheaImages3\Images;
 
 class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 
+	public bool $placeholder = false;
+
+	public function SetPlaceholder(): Images {
+		$this->placeholder = true;
+		return $this;
+	}
+
 	public function FromUploadFile(array $file): Images {
 		$imageName = str_replace(" ", "_", $file["name"]);
 		$imageNameArr = explode(".", $imageName);
@@ -42,13 +49,16 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 	}
 
 	public function GetThumbFile(): string {
-		return PathManager::GetGeneratedFolder($this->folder).$this->BuildFilename("thumb");
+		$name = "thumb";
+		if($this->placeholder) $name .= "_placeholder";
+		return PathManager::GetGeneratedFolder($this->folder).$this->BuildFilename($name);
 	}
 
 	public function GetFileName($w, $h, $stretch=false): string {
-		$dimensions = $w."x".$h;
-		if($stretch) $dimensions .= "-s";
-		return PathManager::GetGeneratedFolder($this->folder).$this->BuildFilename($dimensions);
+		$name = $w."x".$h;
+		if($stretch) $name .= "-s";
+		if($this->placeholder) $name .= "_placeholder";
+		return PathManager::GetGeneratedFolder($this->folder).$this->BuildFilename($name);
 	}
 
 	public function BuildFilename(string $addon): string {

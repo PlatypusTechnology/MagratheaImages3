@@ -4,6 +4,7 @@ namespace MagratheaImages3;
 
 use AuthApi;
 use Magrathea2\Config;
+use Magrathea2\ConfigApp;
 use Magrathea2\MagratheaApi;
 use Magrathea2\MagratheaPHP;
 use MagratheaImages3\Apikey\ApikeyApi;
@@ -37,6 +38,12 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("POST", "clean", null, function($params) {
 			$q = @$_POST["q"];
 			return Helper::Clean($q);
+		}, self::OPEN);
+		$this->Add("GET", "settings", null, function($params) {
+			return[
+				"thumb_size" => ConfigApp::Instance()->Get("thumb_size"),
+				"secure" => Config::Instance()->Get("secure_api"),
+			];
 		}, self::OPEN);
 	}
 
@@ -92,7 +99,6 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("GET", "image/:key/:id/raw", $api, "ViewRaw", self::OPEN);
 		$this->Add("GET", "image/:key/:id/thumb", $api, "ViewThumb", self::OPEN);
 		$this->Add("GET", "image/:key/:id/preview/:size", $api, "Preview", self::OPEN, "Gets the image in the given size without saving it");
-		$this->Add("GET", "image/:key/:id/debug/:size", $api, "DebugResize", self::OPEN);
 	}
 
 	private function Version() {

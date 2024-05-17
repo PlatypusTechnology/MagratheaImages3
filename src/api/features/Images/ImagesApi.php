@@ -75,9 +75,13 @@ class ImagesApi extends MagratheaApiControl {
 			return $this->ViewThumb($params);
 		}
 		$stretch = @$_GET["stretch"] == '1';
+		$placeholder = @$_GET["placeholder"] == '1';
+		$forceGen = @$_GET["generate"] == '1';
 		try {
 			$image = $this->GetById($params);
 			$viewer = new ImageViewer($image);
+			if($placeholder) $viewer->Placeholder();
+			if($forceGen) $viewer->ForceGeneration();
 			$viewer->Size($dimensions["width"], $dimensions["height"], $stretch);
 			return $viewer->ViewFile();
 		} catch(\Exception $e) {
@@ -169,15 +173,15 @@ class ImagesApi extends MagratheaApiControl {
 		if(@$_REQUEST["debug"]) {
 			$debug = true;
 		}
+		$placeholder = @$_GET["placeholder"] == '1';
 		try {
 			if($size == "raw") return $this->ViewRaw($params);
 
 			$image = $this->GetById($params);
 			$viewer = new ImageViewer($image);
 			$viewer->DontSave();
-			if($debug) {
-				$viewer->Debug();
-			}
+			if($debug) $viewer->Debug();
+			if($placeholder) $viewer->Placeholder();
 
 			if($size == "thumb") {
 				$viewer->Thumb();

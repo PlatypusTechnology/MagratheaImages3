@@ -1,6 +1,7 @@
 <?php
 
 use Magrathea2\Admin\AdminElements;
+use MagratheaImages3\Helper;
 use MagratheaImages3\Images\FileManager;
 use MagratheaImages3\Images\ImageUploader;
 
@@ -26,9 +27,11 @@ if(empty($files)) {
 echo "<ul>";
 foreach ($files as $f) {
 	$filenamePieces = explode("/", $f);
+	$sizeInt = filesize($f);
+	$size = Helper::GetSize($sizeInt);
 	$filename = end($filenamePieces);
 	echo "<li class='li-file' onclick='viewImage(\"".$folder."\", \"".$filename."\");'>";
-	echo $filename;
+	echo $filename." - (".$size.")";
 	echo "</li>";
 }
 echo "</ul>";

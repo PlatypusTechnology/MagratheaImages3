@@ -24,6 +24,8 @@ class ImageResizer {
 	public ?GdImage $newGdImage = null;
 	public int $quality = 100;
 
+	public bool $placeholder = false;
+
 	public function __construct(Images $img) {
 		$this->image = $img;
 		$this->extension = $this->image->extension;
@@ -55,6 +57,11 @@ class ImageResizer {
 	public function SetNewFile(string $name): ImageResizer {
 		$this->PrintDebug("Setting new file: ".$name);
 		$this->newFile = $name;
+		return $this;
+	}
+
+	public function SetPlaceholder(): ImageResizer {
+		$this->placeholder = true;
 		return $this;
 	}
 
@@ -146,6 +153,10 @@ class ImageResizer {
 		$targetAspect = $this->GetAspectRatio($this->width, $this->height);
 		$this->PrintDebug("Next Aspect Ratio: ".$targetAspect['ratio']." > ".$targetAspect["format"]);
 
+		if($this->placeholder) {
+			$this->width = floor($this->width/2);
+			$this->height = floor($this->height/2);
+		}
 		if(
 			!$this->keepAspectRatio ||
 			$originalAspect["ratio"] == $targetAspect["ratio"]
@@ -159,16 +170,14 @@ class ImageResizer {
 			$this->PrintDebug("Cut horizontal");
 			$this->SimpleResize($width, $height);
 			$this->SimpleCrop();
-//			$this->cropAlign('center', 'top');
 		} else {
 			$this->PrintDebug("Cut vertical");
 			$height = $this->height;
 			$width = ceil($height * $originalAspect["ratio"]);
 			$this->SimpleResize($width, $height);
 			$middle = $width / 2;
-			$x = $middle - ($this->width / 2);
+			$x = floor($middle - ($this->width / 2));
 			$this->SimpleCrop($x, 0);
-//			$this->cropAlign('center', 'top');
 		}
 
 		return true;
@@ -200,19 +209,21 @@ class ImageResizer {
 			$fileName = $this->newFile;
 			switch($this->extension) {
 				case "png":
-					$quality = floor($this->quality/10) - 1;
+					$quality = $this->placeholder ? 1 : floor($this->quality/10) - 1;
 					return imagepng($gd, $fileName, $quality);
 				case "jpg":
 				case "jpeg":
 				default:
-					$quality = $this->quality;
+					$quality = $this->placeholder ? 10: $this->quality;
 					return imagejpeg($gd, $fileName, $quality);
 				case "webp":
 					$quality = $this->quality;
 					return imagewebp($gd, $fileName, $quality);
 				case "wbmp":
+					if($this->placeholder) return null;
 					return imagewbmp($gd, $fileName);
 				case "bmp":
+					if($this->placeholder) return null;
 					return imagebmp($gd, $fileName);
 			}
 		} catch(Exception $ex) {

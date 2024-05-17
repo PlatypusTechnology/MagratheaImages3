@@ -7,6 +7,8 @@ use Magrathea2\Exceptions\MagratheaApiException;
 use MagratheaImages3\Images\Images;
 use MagratheaImages3\Configs\ImagesConfigs;
 
+use function Magrathea2\p_r;
+
 class ImageViewer {
 
 	public Images $image;
@@ -14,7 +16,9 @@ class ImageViewer {
 	public bool $fileExists = false;
 	public ?ImageResizer $resizer = null;
 	public bool $saveImage = true;
+	public bool $forceGeneration = false;
 	public bool $debugOn = false;
+	public bool $lowQuality = false;
 
 	public function __construct(Images $img) {
 		$this->image = $img;
@@ -24,9 +28,17 @@ class ImageViewer {
 		$this->debugOn = true;
 		return $this;
 	}
+	public function ForceGeneration(): ImageViewer {
+		$this->forceGeneration = true;
+		return $this;
+	}
+	public function DontSave(): ImageViewer {
+		$this->saveImage = false;
+		return $this;
+	}
 	public function GetResizerDebug(): array {
 		if(!$this->resizer) {
-			return [];
+			return ["no-resizer"];
 		}
 		return $this->resizer->GetDebug();
 	}
@@ -35,13 +47,6 @@ class ImageViewer {
 			new ImageResizer($this->image);
 		}
 		return $this->resizer;
-	}
-	public function ForceGeneration(): bool {
-		return (@$_GET["generate"] == "true");
-	}
-	public function DontSave(): ImageViewer {
-		$this->saveImage = false;
-		return $this;
 	}
 
 	public function SetFile($filename) {
@@ -130,36 +135,36 @@ class ImageViewer {
 		return $this->SetFile($this->image->GetRawFile())->ViewFile();
 	}
 
-	public function Thumb(): ImageViewer {
-		$file = $this->image->GetThumbFile();
-		$this->SetFile($file);
-		if($this->ShouldGenerate()) {
-			try {
-				$this->resizer = new ImageResizer($this->image);
-				if($this->debugOn) $this->resizer->DebugOn();
-				$thumbSize = $this->resizer->GetThumbSize();
-				$this->resizer->SetDimensions($thumbSize, $thumbSize);
-				$this->resizer->SetNewFile($file);
-				$this->resizer->Resize();
-				if($this->saveImage) $this->resizer->Save();
-			} catch(MagratheaApiException $ex) {
-				throw $ex;
-			} catch(\Exception $ex) {
-				throw new MagratheaApiException("Error generating image: ".$ex->getMessage(), true, 500, $ex);
-			}
-		}
+	public function Placeholder(): ImageViewer {
+		$this->lowQuality = true;
 		return $this;
 	}
 
+	public function Thumb(): ImageViewer {
+		if($this->lowQuality) $this->image->SetPlaceholder();
+		$file = $this->image->GetThumbFile();
+		$this->SetFile($file);
+		$this->resizer = new ImageResizer($this->image);
+		$thumbSize = $this->resizer->GetThumbSize();
+		return $this->Process($thumbSize, $thumbSize);
+	}
+
 	public function Size($w, $h, $stretch=false): ImageViewer {
+		if($this->lowQuality) $this->image->SetPlaceholder();
 		$file = $this->image->GetFileName($w, $h, $stretch);
 		$this->SetFile($file);
+		$this->resizer = new ImageResizer($this->image);
+		return $this->Process($w, $h, $stretch);
+
+	}
+
+	public function Process(int $width, int $height, bool $stretch=false): ImageViewer {
 		if($this->ShouldGenerate()) {
 			try {
-				$this->resizer = new ImageResizer($this->image);
 				if($this->debugOn) $this->resizer->DebugOn();
-				$this->resizer->SetNewFile($file);
-				$this->resizer->SetDimensions($w, $h);
+				if($this->lowQuality) $this->resizer->SetPlaceholder();
+				$this->resizer->SetNewFile($this->file);
+				$this->resizer->SetDimensions($width, $height);
 				$this->resizer->Resize();
 				if($stretch) $this->resizer->keepAspectRatio = false;
 				if($this->saveImage) $this->resizer->Save();
@@ -172,8 +177,10 @@ class ImageViewer {
 		return $this;
 	}
 
+
 	public function ShouldGenerate() {
-		if($this->ForceGeneration()) return true;
+		if($this->debugOn) return true;
+		if($this->forceGeneration) return true;
 		$this->fileExists = file_exists($this->file);
 		return !$this->fileExists;
 	}

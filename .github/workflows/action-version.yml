@@ -20,4 +20,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-            path: $CSV_FILENAME
+          path: |
+            src/configs/git_info.txt
+            src/configs/version.php

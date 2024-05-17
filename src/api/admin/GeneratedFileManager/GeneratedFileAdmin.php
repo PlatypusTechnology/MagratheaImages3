@@ -37,7 +37,7 @@ class GeneratedFileAdmin extends AdminFeature implements iAdminFeature {
 		$apikey = new Apikey($id);
 		$mediaF = $apikey->GetDestinationFolder();
 		$folder = $_POST["folder"];
-		$folderExplore = $mediaF."/".$folder;
+		$folderExplore = $mediaF.$folder;
 		include("views/files.php");
 	}
 
