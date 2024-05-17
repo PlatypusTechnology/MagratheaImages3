@@ -1,5 +1,5 @@
-commit 6b7cdeaa638fa66723ce2c8110cf15d28297a84e
+commit dd5a36fce585ef04d2e0f9d2d6bcccb0c4bf80f8
 Author: Paulo Martins <paulovelho@paulovelho.com>
-Date:   Tue May 14 01:49:57 2024 -0300
+Date:   Thu May 16 23:57:35 2024 -0300
 
-    validating cache
+    placeholder for images. settings endpoint
