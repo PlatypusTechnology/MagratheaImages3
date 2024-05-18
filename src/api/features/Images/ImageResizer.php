@@ -4,6 +4,7 @@ namespace MagratheaImages3\Images;
 
 use Exception;
 use GdImage;
+use Magrathea2\Admin\Features\AppConfig\AppConfig;
 use Magrathea2\ConfigApp;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\Exceptions\MagratheaException;
@@ -77,6 +78,14 @@ class ImageResizer {
 	public function Generate(): bool {
 		if (!$this->Resize()) return false;
 		return $this->Save();
+	}
+
+	public function AdjustPlaceholder(): void {
+		if($this->placeholder) {
+			$placeholderProp = ConfigApp::Instance()->GetInt("placeholder_size", 0.5);
+			$this->width = floor($this->width * $placeholderProp);
+			$this->height = floor($this->height * $placeholderProp);
+		}
 	}
 
 	public function SimpleResize(int $w=0, int $h=0): bool {
@@ -153,10 +162,7 @@ class ImageResizer {
 		$targetAspect = $this->GetAspectRatio($this->width, $this->height);
 		$this->PrintDebug("Next Aspect Ratio: ".$targetAspect['ratio']." > ".$targetAspect["format"]);
 
-		if($this->placeholder) {
-			$this->width = floor($this->width/2);
-			$this->height = floor($this->height/2);
-		}
+		$this->AdjustPlaceholder();
 		if(
 			!$this->keepAspectRatio ||
 			$originalAspect["ratio"] == $targetAspect["ratio"]
