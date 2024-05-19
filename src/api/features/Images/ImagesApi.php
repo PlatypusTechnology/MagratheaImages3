@@ -38,11 +38,9 @@ class ImagesApi extends MagratheaApiControl {
 	}
 
 	public function ViewImageDetails($params) {
-		$key = @$_GET["key"];
-		if(empty($key)) throw new MagratheaApiException("Param [key] for upload key is empty", true, 400);
 		try {
 			$image = $this->GetById($params);
-			if($image->upload_key != $key) throw new MagratheaApiException("Invalid key [".$key."]", true, 400, $key);
+			unset($image->placeholder);
 			return $image;
 		} catch(\Exception $e) {
 			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
@@ -66,6 +64,7 @@ class ImagesApi extends MagratheaApiControl {
 
 	public function ViewImage($params) {
 		$size = @$params["size"];
+		if(@$size == "raw") return $this->ViewRaw($params);
 		if(!empty($size)) {
 			$dimensions = $this->GetWidthHeight($size);
 		} else {
