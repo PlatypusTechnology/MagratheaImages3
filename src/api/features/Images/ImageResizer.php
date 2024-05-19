@@ -82,7 +82,7 @@ class ImageResizer {
 
 	public function AdjustPlaceholder(): void {
 		if($this->placeholder) {
-			$placeholderProp = ConfigApp::Instance()->GetInt("placeholder_size", 0.5);
+			$placeholderProp = ConfigApp::Instance()->GetFloat("placeholder_size", 0.5);
 			$this->width = floor($this->width * $placeholderProp);
 			$this->height = floor($this->height * $placeholderProp);
 		}
