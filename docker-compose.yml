@@ -27,20 +27,20 @@ services:
       - ./backups:/var/www/backups
       - ./medias:/var/www/medias
     ports:
-      - 8080:80
+      - 8081:80
       - 443
     env_file:
       - ./docker/.env
 
 # helper containers:
-  magrathea_phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: magrathea-dev_pma
-    environment:
-      PMA_HOST: mag_sql
-      PMA_PORT: 3306
-      PMA_ARBITRARY: 1
-    depends_on:
-      - mag_sql
-    ports:
-      - 8183:80
+  # magrathea_phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin
+  #   container_name: magrathea-dev_pma
+  #   environment:
+  #     PMA_HOST: mag_sql
+  #     PMA_PORT: 3306
+  #     PMA_ARBITRARY: 1
+  #   depends_on:
+  #     - mag_sql
+  #   ports:
+  #     - 8183:80

@@ -37,6 +37,7 @@ class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
 
 	private $features = [];
 	public function SetFeatures(){
+		parent::SetFeatures();
 		$this->LoadApi();
 		$this->features["appconfig"] = new AdminFeatureAppConfig(true);
 		$this->features["apikey"] = new ApikeyAdmin();
@@ -62,6 +63,7 @@ class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
 		$menu
 		->Add($this->features["medias"]->GetMenuItem())
 		->Add($this->features["gen-files"]->GetMenuItem())
+		->Add($this->features["images-crud"]->GetMenuItem())
 
 		->Add($menu->CreateTitle("Settings"))
 		->Add($this->features["apikey"]->GetMenuItem())
@@ -72,18 +74,10 @@ class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
 
 		->Add($menu->CreateSpace())
 
-		->Add($menu->GetDebugSection())
-		->Add($this->features["log"]->GetMenuItem())
-		->Add($this->features["images-crud"]->GetMenuItem())
+		->Add(["title" => "Magrathea", "type" => "main" ]);
+		$this->AddMagratheaMenu($menu);
 
-		->Add($menu->CreateSpace())
-		->Add($menu->GetHelpSection())
-
-		->Add($menu->CreateTitle("Magrathea"))
-		->Add($menu->GetItem("objects"))
-		->Add(["title" => "Magrathea Admin", "link" => "/magrathea.php"])
-
-		->Add($menu->GetLogoutMenuItem());
+		$menu->Add($menu->GetLogoutMenuItem());
 		return $menu;
 	}
 }

@@ -177,7 +177,6 @@ class ImageViewer {
 		return $this;
 	}
 
-
 	public function ShouldGenerate() {
 		if($this->debugOn) return true;
 		if($this->forceGeneration) return true;

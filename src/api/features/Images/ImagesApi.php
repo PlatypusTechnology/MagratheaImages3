@@ -53,8 +53,8 @@ class ImagesApi extends MagratheaApiControl {
 			$height = @$_GET["h"] ? $_GET["h"] : @$_GET["height"];
 		} else {
 			$pieces = explode('x', $sizes);
-			$width = $pieces[0];
-			$height = $pieces[1];
+			$width = @$pieces[0];
+			$height = @$pieces[1];
 		}
 		return [
 			'width' => $width,
@@ -179,6 +179,7 @@ class ImagesApi extends MagratheaApiControl {
 			$image = $this->GetById($params);
 			$viewer = new ImageViewer($image);
 			$viewer->DontSave();
+			$viewer->ForceGeneration();
 			if($debug) $viewer->Debug();
 			if($placeholder) $viewer->Placeholder();
 
