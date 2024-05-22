@@ -12,6 +12,8 @@ use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\Apikey;
 use MagratheaImages3\Images\ImagesControl;
 
+use function Magrathea2\now;
+
 class ApikeyApi extends MagratheaApiControl {
 
 	public function __construct() {
@@ -51,6 +53,7 @@ class ApikeyApi extends MagratheaApiControl {
 			"page" => $page,
 			"images" => $imgs,
 			"has_more" => (count($imgs) == $count),
+			"timestamp" => now(),
 		];
 	}
 
