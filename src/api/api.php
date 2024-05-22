@@ -29,6 +29,7 @@ class MagratheaImagesApi extends MagratheaApi {
 			"cache-control",
 			"x-requested-with",
 			"Content-type",
+			"pragma", "expires",
 		]);
 		$this->DisableCache();
 		$this->SetAuth();
