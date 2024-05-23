@@ -1,5 +1,5 @@
-commit dd5a36fce585ef04d2e0f9d2d6bcccb0c4bf80f8
+commit 469cba413bca8cff47f0628b4ca0635d819b6207
 Author: Paulo Martins <paulovelho@paulovelho.com>
-Date:   Thu May 16 23:57:35 2024 -0300
+Date:   Wed May 22 23:44:16 2024 -0300
 
-    placeholder for images. settings endpoint
+    adding remove functions
