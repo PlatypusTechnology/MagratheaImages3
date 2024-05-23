@@ -38,6 +38,7 @@ class GeneratedFileAdmin extends AdminFeature implements iAdminFeature {
 		$mediaF = $apikey->GetDestinationFolder();
 		$folder = $_POST["folder"];
 		$folderExplore = $mediaF.$folder;
+		$showDeletePattern = ($folder == "generated");
 		include("views/files.php");
 	}
 
@@ -85,5 +86,17 @@ class GeneratedFileAdmin extends AdminFeature implements iAdminFeature {
 		}
 		return $rs;
 	}
+
+	public function Pattern() {
+		$key = $_POST["apikey"];
+		$pattern = $_POST["pattern"];
+		$title = "Deleting: ".$pattern;
+		$rs = $pattern;
+		$manager = new FileManager();
+		$manager->SetApiKeyId($key);
+		$rs = $manager->DeleteGeneratedPattern($pattern);
+		include("views/rs.php");
+	}
+
 }
 

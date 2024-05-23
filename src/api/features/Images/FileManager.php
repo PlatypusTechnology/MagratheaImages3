@@ -38,7 +38,7 @@ class FileManager {
 	public function DeleteFile(string $file): bool {
 		$dFile = $this->path.$file;
 		if(!file_exists($dFile)) {
-			throw new \Magrathea2\Exceptions\MagratheaException("filee does not exists: [".$dFile."]");
+			throw new \Magrathea2\Exceptions\MagratheaException("file does not exists: [".$dFile."]");
 		}
 		try {
 			return unlink($dFile);
@@ -46,4 +46,15 @@ class FileManager {
 			throw $ex;
 		}
 	}
+
+	public function DeleteGeneratedPattern($pattern): array {
+		$command = "rm -v ".$this->path."generated/".$pattern;
+		$rs = shell_exec($command);
+		return [
+			"command" => $command,
+			"response" => $rs,
+		];
+	}
+
+
 }

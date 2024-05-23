@@ -44,6 +44,15 @@ function previewSize(el) {
 	openPreview(id, size);
 }
 
+function removeImage(id) {
+	if(!confirm("delete image ID# " + id + "?")) return;
+	callFeature(mediaFeatureName, "Remove", "GET", { id })
+		.then((rs) => {
+			refreshMedias();
+			window.setTimeout(() => addTo("#media-image-viewer", rs), 1000);
+		});
+}
+
 function loadDropzone() {
 	Dropzone.options.dropzoneUpload = {
 		withCredentials: false,

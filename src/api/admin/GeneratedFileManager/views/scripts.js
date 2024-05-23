@@ -31,7 +31,16 @@ function deleteGeneratedImage(btn, apikey, file) {
 	$(btn).fadeOut();
 	callFeature(fileFeatureName, "DeleteFile", "POST", { apikey, file })
 		.then((rs) => {
-			addTo("#folder-image-viewer", rs, true);
+			addTo("#folder-image-viewer", rs);
+			openFolder('generated');
+		});
+}
+
+function deletePattern(apikey) {
+	const pattern = $("#file_pattern").val();
+	callFeature(fileFeatureName, "Pattern", "POST", { apikey, pattern })
+		.then((rs) => {
+			addTo("#folder-image-viewer", rs);
 			openFolder('generated');
 		});
 }

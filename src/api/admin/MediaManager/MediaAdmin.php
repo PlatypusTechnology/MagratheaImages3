@@ -8,6 +8,7 @@ use Magrathea2\Config;
 use MagratheaImages3\Apikey\Apikey;
 use MagratheaImages3\Apikey\ApikeyControl;
 use MagratheaImages3\Images\Images;
+use MagratheaImages3\Images\ImagesControl;
 
 class MediaAdmin extends AdminFeature implements iAdminFeature {
 	public string $featureName = "Medias";
@@ -57,6 +58,19 @@ class MediaAdmin extends AdminFeature implements iAdminFeature {
 		$api = "/key/".$key."/upload";
 		$uploadApi = Config::Instance()->Get("app_url").$api;
 		include("views/uploader.php");
+	}
+
+	public function Remove() {
+		$id = $_GET["id"];
+		$imageControl = new ImagesControl();
+		try {
+			$img = new Images($id);
+			$rs = $imageControl->RemoveImage($img);
+			$title = "deleting image ".$img->name;
+			include("views/rs.php");
+		} catch (\Exception $ex) {
+			print_r($ex);
+		}
 	}
 
 }

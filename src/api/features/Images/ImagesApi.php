@@ -4,8 +4,6 @@ namespace MagratheaImages3\Images;
 
 use Magrathea2\Config;
 use Magrathea2\Exceptions\MagratheaApiException;
-use Magrathea2\Exceptions\MagratheaException;
-use Magrathea2\MagratheaApi;
 use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\ApikeyControl;
 
@@ -155,6 +153,8 @@ class ImagesApi extends MagratheaApiControl {
 	}
 
 	public function UploadUrlWithKey($key, string $url) {
+		if(!filter_var($url, FILTER_VALIDATE_URL))
+			throw new MagratheaApiException("not a valid url: [".$url."]");
 		$uploader = new ImageUploader();
 		try {
 			$uploader->SetKey($key);
@@ -200,6 +200,19 @@ class ImagesApi extends MagratheaApiControl {
 		} catch(\Exception $ex) {
 			throw new MagratheaApiException($ex->getMessage(), true, 500);
 		}
+	}
+
+	public function Remove($params) {
+		try {
+			$key = @$params["key"];
+			$id = @$params["id"];
+			if(!$key || !$id) {
+				throw new MagratheaApiException("empty data");
+			}
+		} catch(\Exception $e) {
+			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
+		}
+
 	}
 
 }

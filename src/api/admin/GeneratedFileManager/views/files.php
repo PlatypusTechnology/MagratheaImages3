@@ -36,3 +36,20 @@ foreach ($files as $f) {
 }
 echo "</ul>";
 
+if($showDeletePattern) {
+	?>
+	<div class="row">
+	<div class="col-6">
+		<?
+		$elements->Input("text", "file_pattern", "Delete Pattern:");
+		?>
+	</div>
+	<div class="col-6">
+		<?
+		$elements->Button("Delete Pattern", "deletePattern(".$id.")", ["w-100", "btn-primary"]);
+		?>
+	</div>
+	</div>
+	<?
+}
+

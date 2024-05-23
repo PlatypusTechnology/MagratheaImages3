@@ -76,6 +76,7 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("POST", "upload-url", $api, "Upload", self::OPEN);
 		$this->Add("POST", "key/:key/upload", $api, "Upload", self::OPEN);
 		$this->Add("POST", "key/:key/upload-url", $api, "Upload", self::OPEN);
+		$this->Add("DELETE", "key/:key/delete/:id", $api, "Remove", self::OPEN);
 		if(Config::Instance()->Get("secure_api")) {
 			$this->SecureImages();
 		} else {

@@ -66,6 +66,11 @@ $form->Print();
 			<div class="col-12 mt-2">
 				<pre><? echo $image; ?></pre>
 			</div>
+			<div class="offset-6 col-6 mt-2">
+				<?php
+				$elements->Button("Delete", "removeImage(".$id.");", ["btn-danger", "w-100"]);
+				?>
+			</div>
 		</div>
 	</div>
 </div>
