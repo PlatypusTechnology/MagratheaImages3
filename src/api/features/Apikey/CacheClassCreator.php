@@ -24,7 +24,7 @@ class CacheClassCreator {
 
 	public function GetCode(): string {
 		$code = $this->GetHeader();
-		$code .= "function GetApiKeyCached (\$id): string {\n";
+		$code .= "function GetCachedApiKey (string \$id): array|null {\n";
 		$code .= $this->GetKeysArray();
 		$code .= "\treturn @\$keys[\$id];\n";
 		$code .= "}\n";
@@ -33,10 +33,11 @@ class CacheClassCreator {
 
 	private function GetKeysArray(): string {
 		$control = new ApikeyControl();
+		/** @var ApiKey[] */
 		$keys = $control->GetAll();
 		$code = "\t\$keys = [\n";
 		foreach($keys as $k) {
-			$code .= "\t\t\"".$k->id."\" => \"".$k->public_key."\",\n";
+			$code .= "\t\t\"".$k->public_key."\" => [\"id\" => \"".$k->id."\", \"folder\" => \"".$k->folder."\"],\n";
 		}
 		$code .= "\t];\n";
 		return $code;

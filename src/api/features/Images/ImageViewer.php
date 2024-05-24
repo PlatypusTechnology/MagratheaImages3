@@ -3,11 +3,10 @@
 namespace MagratheaImages3\Images;
 
 use GdImage;
+use Magrathea2\Config;
 use Magrathea2\Exceptions\MagratheaApiException;
+use MagratheaImages3\Apikey\ApikeyControl;
 use MagratheaImages3\Images\Images;
-use MagratheaImages3\Configs\ImagesConfigs;
-
-use function Magrathea2\p_r;
 
 class ImageViewer {
 
@@ -113,12 +112,29 @@ class ImageViewer {
 		} else return false;
 	}
 
+	public static function ViewQuickAccess(string $key, string $fileName) {
+		$folder = ApikeyControl::GetCachedFolder($key);
+		$file = PathManager::GetGeneratedFolder($folder).$fileName;
+		if(file_exists($file)) {
+			self::HeaderExtension("webp");
+			header("Content-Length: ".filesize($file));
+			$fp = fopen($file, 'rb');
+			if(!$fp) throw new MagratheaApiException("could not open file [".$file."]");
+			fpassthru($fp);
+			exit;
+		}
+	}
+
 	public function ViewFile() {
 		if($this->debugOn) return $this->DebugView();
-		self::HeaderExtension($this->image->extension);
+		$webp = boolval(Config::Instance()->Get("webp_quick_access"));
+		$ext = $webp ? "webp" : $this->image->extension;
+		$this->file = $this->file.".".$ext;
+		self::HeaderExtension($ext);
 		header("Content-Length: ".filesize($this->file));
 		// dump the picture and stop the script
 		$fp = fopen($this->file, 'rb');
+		if(!$fp) throw new MagratheaApiException("could not open file [".$this->file."]");
 		fpassthru($fp);
 		exit;
 	}

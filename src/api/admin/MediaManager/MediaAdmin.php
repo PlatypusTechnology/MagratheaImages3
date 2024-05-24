@@ -35,8 +35,9 @@ class MediaAdmin extends AdminFeature implements iAdminFeature {
 		$id = $_GET["id"];
 		$image = new Images($id);
 		$apiControl = new ApikeyControl();
-		$key = $apiControl->GetCached($image->upload_key);
+		$apikey = new Apikey($image->upload_key);
 		$apiUrl = Config::Instance()->Get("app_url");
+		$key = $apikey->public_key;
 		$api = "/image/".$key."/".$id;
 		$imgApi = $apiUrl.$api."/thumb";
 		include("views/view-image.php");

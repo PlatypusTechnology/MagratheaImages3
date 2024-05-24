@@ -17,6 +17,19 @@ class ImagesApi extends MagratheaApiControl {
 		$this->isSecure = boolval(Config::Instance()->Get("secure_api"));
 	}
 
+	public function LookForImage($params, $size) {
+		if(@$_GET["generate"] == "1") return false;
+		$quickAccess = boolval(Config::Instance()->Get("webp_quick_access"));
+		if(!$quickAccess) return false;
+		$id = $params["id"];
+		$key = $params["key"];
+		$imageName = $id."_".$size;
+		if(@$_GET["stretch"] == '1') $imageName .= "-s";
+		if(@$_GET["placeholder"] == '1') $imageName .= "_placeholder";
+		$imageName .= ".webp";
+		ImageViewer::ViewQuickAccess($key, $imageName);
+	}
+
 	public function GetById($params) {
 		try {
 			$id = $params["id"];
@@ -26,8 +39,8 @@ class ImagesApi extends MagratheaApiControl {
 				$key = @$params["key"];
 				if(empty($key)) throw new MagratheaApiException("Key is invalid");
 				$keyControl = new ApikeyControl();
-				$imgKey = $keyControl->GetCached($img->upload_key);
-				if($imgKey != $key) throw new MagratheaApiException("Key-Image relation invalid");
+				$imgKey = $keyControl->GetCached($key);
+				if($imgKey["id"] != $img->upload_key) throw new MagratheaApiException("Key-Image relation invalid");
 			}
 			return $img;
 		} catch(\Exception $e) {
@@ -71,6 +84,8 @@ class ImagesApi extends MagratheaApiControl {
 		if($dimensions["width"] == null || $dimensions["height"] == null) {
 			return $this->ViewThumb($params);
 		}
+		$s = $dimensions["width"]."x".$dimensions["height"];
+		$this->LookForImage($params, $s);
 		$stretch = @$_GET["stretch"] == '1';
 		$placeholder = @$_GET["placeholder"] == '1';
 		$forceGen = @$_GET["generate"] == '1';
@@ -97,6 +112,7 @@ class ImagesApi extends MagratheaApiControl {
 	}
 
 	public function ViewThumb($params) {
+		$this->LookForImage($params, "thumb");
 		try {
 			$image = $this->GetById($params);
 			$viewer = new ImageViewer($image);

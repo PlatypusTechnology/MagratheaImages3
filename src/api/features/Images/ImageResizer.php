@@ -5,6 +5,7 @@ namespace MagratheaImages3\Images;
 use Exception;
 use GdImage;
 use Magrathea2\Admin\Features\AppConfig\AppConfig;
+use Magrathea2\Config;
 use Magrathea2\ConfigApp;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\Exceptions\MagratheaException;
@@ -211,8 +212,10 @@ class ImageResizer {
 			throw new MagratheaApiException("Could not save generated image; destination folder is invalid", true, 500, $this->newFile);
 		}
 		try {
+			$webp = boolval(Config::Instance()->Get("webp_quick_access"));
+			if($webp) return $this->SaveWebp();
 			$gd = $this->newGdImage;
-			$fileName = $this->newFile;
+			$fileName = $this->newFile.".".$this->extension;
 			switch($this->extension) {
 				case "png":
 					$quality = $this->placeholder ? 1 : floor($this->quality/10) - 1;
@@ -223,7 +226,7 @@ class ImageResizer {
 					$quality = $this->placeholder ? 10: $this->quality;
 					return imagejpeg($gd, $fileName, $quality);
 				case "webp":
-					$quality = $this->quality;
+					$quality = $this->placeholder ? 10: $this->quality;
 					return imagewebp($gd, $fileName, $quality);
 				case "wbmp":
 					if($this->placeholder) return null;
@@ -231,6 +234,31 @@ class ImageResizer {
 				case "bmp":
 					if($this->placeholder) return null;
 					return imagebmp($gd, $fileName);
+			}
+		} catch(Exception $ex) {
+			throw new MagratheaApiException("Error generating Image: ".$ex->getMessage(), true, 500, $ex);
+		}
+	}
+
+	public function SaveWebp(): bool {
+		$this->extension = "webp";
+		try {
+			$gd = $this->newGdImage;
+			$fileName = $this->newFile.".".$this->extension;
+			switch($this->extension) {
+				case "png":
+				case "gif":
+					imagepalettetotruecolor($gd);
+					imagealphablending($gd, true);
+					imagesavealpha($gd, true);
+				case "jpg":
+				case "jpeg":
+				case "webp":
+				case "wbmp":
+				case "bmp":
+				default:
+					$quality = $this->placeholder ? 10: $this->quality;
+					return imagewebp($gd, $fileName, $quality);
 			}
 		} catch(Exception $ex) {
 			throw new MagratheaApiException("Error generating Image: ".$ex->getMessage(), true, 500, $ex);

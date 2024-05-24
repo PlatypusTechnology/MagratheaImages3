@@ -58,8 +58,8 @@ class ApikeyApi extends MagratheaApiControl {
 	}
 
 	public function GetCached($params) {
-		$id = $params["id"];
-		return $this->service->GetCached($id);
+		$key = $params["public_key"];
+		return $this->service->GetCached($key);
 
 	}
 

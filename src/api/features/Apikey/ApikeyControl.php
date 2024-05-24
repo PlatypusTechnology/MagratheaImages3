@@ -57,14 +57,23 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 		return $this->RunRow($q);
 	}
 
-	public function GetCached($id): string {
-		$cache = @include(__DIR__."/cache/ApikeyCache.php");
+	private static function loadCache() {
+		$cache = @include_once(__DIR__."/cache/ApikeyCache.php");
 		if(!$cache) {
 			$message = "Apikey cache not generated";
 			ErrorManager::Instance()->DisplayMesage($message);
 			throw new MagratheaException($message);
 		}
-		return GetApiKeyCached($id);
+
+	}
+	public static function GetCached(string $public_key): array|null {
+		self::loadCache();
+		return GetCachedApiKey($public_key);
+	}
+	public static function GetCachedFolder(string $public_key): string {
+		self::loadCache();
+		$key = GetCachedApiKey($public_key);
+		return $key["folder"];
 	}
 
 	public function Create($data): array {

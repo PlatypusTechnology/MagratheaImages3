@@ -6,9 +6,11 @@ use AuthApi;
 use Magrathea2\Config;
 use Magrathea2\ConfigApp;
 use Magrathea2\MagratheaApi;
+use Magrathea2\MagratheaHelper;
 use Magrathea2\MagratheaPHP;
 use MagratheaImages3\Apikey\ApikeyApi;
 use MagratheaImages3\Images\ImagesApi;
+use MagratheaImages3\Images\ImageUploader;
 
 class MagratheaImagesApi extends MagratheaApi {
 
@@ -42,9 +44,12 @@ class MagratheaImagesApi extends MagratheaApi {
 			return Helper::Clean($q);
 		}, self::OPEN);
 		$this->Add("GET", "settings", null, function($params) {
+			$upload = ImageUploader::getMaximumFileUploadSize();
 			return[
 				"thumb_size" => ConfigApp::Instance()->Get("thumb_size"),
 				"secure" => Config::Instance()->Get("secure_api"),
+				"upload_limit_bytes" => $upload,
+				"upload_limit" => MagratheaHelper::FormatSize($upload),
 			];
 		}, self::OPEN);
 	}
@@ -66,7 +71,7 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("GET", "keys", $api, "GetAll", self::LOGGED);
 		$this->Add("GET", "key/:key/view", $api, "GetByKey", self::OPEN);
 		$this->Add("GET", "key/:key/images", $api, "ViewImages", self::OPEN);
-		$this->Add("GET", "key/:id/cached", $api, "GetCached", self::LOGGED);
+		$this->Add("GET", "key/:public_key/cached", $api, "GetCached", self::LOGGED);
 		$this->Add("POST", "key/create", $api, "NewKey", self::OPEN);
 	}
 
@@ -84,6 +89,7 @@ class MagratheaImagesApi extends MagratheaApi {
 		}
 	}
 
+	// gets: generate, placeholder, stretch
 	private function PublicImages() {
 		$api = new ImagesApi();
 		$this->Add("GET", "image/:id/details", $api, "ViewImageDetails", self::OPEN);

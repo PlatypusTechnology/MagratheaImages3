@@ -51,14 +51,18 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 	public function GetThumbFile(): string {
 		$name = "thumb";
 		if($this->placeholder) $name .= "_placeholder";
-		return PathManager::GetGeneratedFolder($this->folder).$this->BuildFilename($name);
+		return PathManager::GetGeneratedFolder($this->folder).$this->BuildGenFileName($name);
 	}
 
 	public function GetFileName($w, $h, $stretch=false): string {
 		$name = $w."x".$h;
 		if($stretch) $name .= "-s";
 		if($this->placeholder) $name .= "_placeholder";
-		return PathManager::GetGeneratedFolder($this->folder).$this->BuildFilename($name);
+		return PathManager::GetGeneratedFolder($this->folder).$this->BuildGenFileName($name);
+	}
+
+	public function BuildGenFileName(string $addon): string {
+		return $this->id."_".$addon;
 	}
 
 	public function BuildFilename(string $addon): string {
