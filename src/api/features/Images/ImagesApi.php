@@ -225,6 +225,7 @@ class ImagesApi extends MagratheaApiControl {
 			if(!$key || !$id) {
 				throw new MagratheaApiException("empty data");
 			}
+			return $this->service->Remove($key, $id);
 		} catch(\Exception $e) {
 			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
 		}
