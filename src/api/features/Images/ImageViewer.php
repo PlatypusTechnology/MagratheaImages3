@@ -18,6 +18,7 @@ class ImageViewer {
 	public bool $forceGeneration = false;
 	public bool $debugOn = false;
 	public bool $lowQuality = false;
+	public bool $rawFile = false;
 
 	public function __construct(Images $img) {
 		$this->image = $img;
@@ -129,7 +130,7 @@ class ImageViewer {
 		if($this->debugOn) return $this->DebugView();
 		$webp = boolval(Config::Instance()->Get("webp_quick_access"));
 		$ext = $webp ? "webp" : $this->image->extension;
-		$this->file = $this->file.".".$ext;
+		$this->file = $this->rawFile ? $this->file : $this->file.".".$ext;
 		self::HeaderExtension($ext);
 		header("Content-Length: ".filesize($this->file));
 		// dump the picture and stop the script
@@ -148,6 +149,7 @@ class ImageViewer {
 	}
 
 	public function Raw() {
+		$this->rawFile = true;
 		return $this->SetFile($this->image->GetRawFile())->ViewFile();
 	}
 
