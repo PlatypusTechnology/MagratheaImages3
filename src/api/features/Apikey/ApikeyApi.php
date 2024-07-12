@@ -63,6 +63,7 @@ class ApikeyApi extends MagratheaApiControl {
 
 	}
 
+	// {"secret":<< api-secret >>, "folder":<< folder-name >>}
 	public function NewKey($params) {
 		$secret = ConfigApp::Instance()->Get("secret");
 		if(@$_POST["secret"] != $secret) {
