@@ -107,21 +107,11 @@ class ImageUploader {
 			} else {
 				return $this->returnImageNotUploaded($image);
 			}
-			return [
-				"success" => true,
-				"image" => $image,
-			];
+			return $image;
 		} catch(MagratheaApiException $ex) {
-			return [
-				"success" => false,
-				"error" => $ex->getMessage(),
-				"data" => $ex->GetData(),
-			];
+			throw $ex;
 		} catch(\Exception $e) {
-			return [
-				"success" => false,
-				"error"=> $e->getMessage()
-			];
+			throw $e;
 		}
 	}
 
