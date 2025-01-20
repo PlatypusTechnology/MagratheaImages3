@@ -92,21 +92,6 @@ class ResampleCalculator {
 		$this->ZeroPoints();
 		$this->resizeRatio = $this->final_image_width / $this->original_image_width;
 		$this->AddDebug("resize ratio ".$this->resizeRatio);
-		// $height = $this->original_image_height;
-		// if($resizeRatio != $this->src_aspect["ratio"]) {
-		// 	$this->resize_width = $this->final_image_width;
-		// 	$this->resize_height = $this->original_image_height * $resizeRatio;
-		// 	if(
-		// 		$this->resize_width != $this->original_image_width &&
-		// 		$this->resize_height != $this->original_image_height
-		// 	) {
-		// 		$this->shouldResize = true;
-		// 		$this->DebugResize();
-		// 		$height = $this->resize_width;
-		// 	} else {
-		// 		$this->src_height = $this->final_image_height;
-		// 	}
-		// }
 
 		$this->dst_width = $this->final_image_width;
 		$this->dst_height = $this->final_image_height;
