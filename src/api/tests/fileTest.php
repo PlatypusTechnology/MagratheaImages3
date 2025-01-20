@@ -1,8 +1,11 @@
 <?php
 
+use Magrathea2\Config;
 use Magrathea2\ConfigApp;
 use Magrathea2\Tests\TestsHelper;
 use MagratheaImages3\Apikey\Apikey;
+
+include_once(__DIR__."/../_inc.php");
 
 class fileTest extends \PHPUnit\Framework\TestCase {
 
@@ -21,14 +24,13 @@ class fileTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	function testGetMediaFolderFromApiKey() {
-		$mediaFolder = "/some/path/to/media";
+		$mediaFolder = Config::Instance()->Get("medias_path");
 		$destinationFolder = "gen-bla";
 		$apikey = new Apikey();
-		$apikey->val = "randomkey";
+		$apikey->public_key = "randomkey";
 		$apikey->folder = $destinationFolder;
-		$mediaFolder = "/some/path/to/media";
 		$folder = $apikey->GetDestinationFolder();
-		$this->assertEquals($mediaFolder."/".$destinationFolder, $folder);
+		$this->assertEquals($mediaFolder."/".$destinationFolder."/", $folder);
 	}
 
 }

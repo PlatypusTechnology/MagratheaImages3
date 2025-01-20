@@ -5,6 +5,7 @@ include("shared/Helper.php");
 
 try {
 	Magrathea2\MagratheaPHP::Instance()
+		->MinVersion("2.1.11")
 		->AppPath(realpath(dirname(__FILE__)))
 		->AddCodeFolder(
 			"admin",
