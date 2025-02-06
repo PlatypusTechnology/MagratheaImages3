@@ -17,5 +17,6 @@ RewriteEngine On
 
 </IfModule>
 
-php_value upload_max_filesize 40M
-php_value post_max_size 42M
+# `php_value` does not work on dreamhost servers!
+# php_value upload_max_filesize 40M
+# php_value post_max_size 42M
