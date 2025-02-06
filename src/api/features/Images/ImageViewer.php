@@ -58,7 +58,6 @@ class ImageViewer {
 		self::HeaderExtension($extension);
 		ob_start();
 		switch($extension) {
-			case "png": imagepng($gd); break;
 			case "bmp": imagebmp($gd); break;
 			case "gif": imagegif($gd); break;
 			case "webp": imagewebp($gd); break;
@@ -174,7 +173,6 @@ class ImageViewer {
 		$this->SetFile($file);
 		$this->resizer = new ImageResizer($this->image);
 		return $this->Process($w, $h, $stretch);
-
 	}
 
 	public function Process(int $width, int $height, bool $stretch=false): ImageViewer {

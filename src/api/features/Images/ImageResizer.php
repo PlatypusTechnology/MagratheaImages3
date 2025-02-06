@@ -171,19 +171,6 @@ class ImageResizer {
 			$data["src_width"], $data["src_height"]
 		);
 
-
-
-		// if(empty($this->newGdImage)) $this->CreateBlank();
-		// $created = imagecopyresampled(
-		// 	$this->newGdImage, $gd, 
-		// 	$data["dst_x"], $data["dst_y"],
-		// 	$data["src_x"], $data["src_y"],
-		// 	$data["dst_width"], $data["dst_height"],
-		// 	$data["src_width"], $data["src_height"]
-		// );
-		// if(!$created) {
-		// 	throw new MagratheaApiException("Could not generate image", 500);
-		// }
 		return true;
 	}
 
@@ -228,27 +215,12 @@ class ImageResizer {
 	}
 
 	public function SaveWebp(): bool {
-		// $this->extension = "webp";
-		$this->PrintDebug("saving webp");
+		$this->PrintDebug("saving image");
 		try {
 			$gd = $this->newGdImage;
-			$fileName = $this->newFile.".".$this->extension;
+			$fileName = $this->newFile.".webp";
 			$quality = $this->placeholder ? 10: $this->quality;
-			switch($this->extension) {
-				case "png":
-				case "gif":
-					imagepalettetotruecolor($gd);
-					imagealphablending($gd, true);
-					imagesavealpha($gd, true);
-					return imagepng($gd, $fileName, $quality);
-				case "jpg":
-				case "jpeg":
-				case "webp":
-				case "wbmp":
-				case "bmp":
-				default:
-					return imagewebp($gd, $fileName, $quality);
-			}
+			return imagewebp($gd, $fileName, $quality);
 		} catch(Exception $ex) {
 			throw new MagratheaApiException("Error generating Image: ".$ex->getMessage(), true, 500, $ex);
 		}
