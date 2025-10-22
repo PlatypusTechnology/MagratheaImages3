@@ -27,6 +27,7 @@ services:
       - ./logs:/var/www/logs
       - ./backups:/var/www/backups
       - ./medias:/var/www/medias
+      - ./cache:/var/www/cache
     ports:
       - 8081:80
       - 443

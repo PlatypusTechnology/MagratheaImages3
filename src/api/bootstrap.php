@@ -1,6 +1,5 @@
 <?php
 
-die;
 require "../vendor/autoload.php";
 
 Magrathea2\MagratheaPHP::Instance()

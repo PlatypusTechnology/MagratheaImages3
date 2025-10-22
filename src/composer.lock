@@ -57,16 +57,16 @@
         },
         {
             "name": "firebase/php-jwt",
-            "version": "v6.10.2",
+            "version": "v6.11.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/firebase/php-jwt.git",
-                "reference": "30c19ed0f3264cb660ea496895cfb6ef7ee3653b"
+                "reference": "d1e91ecf8c598d073d0995afa8cd5c75c6e19e66"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/30c19ed0f3264cb660ea496895cfb6ef7ee3653b",
-                "reference": "30c19ed0f3264cb660ea496895cfb6ef7ee3653b",
+                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/d1e91ecf8c598d073d0995afa8cd5c75c6e19e66",
+                "reference": "d1e91ecf8c598d073d0995afa8cd5c75c6e19e66",
                 "shasum": ""
             },
             "require": {
@@ -114,22 +114,22 @@
             ],
             "support": {
                 "issues": "https://github.com/firebase/php-jwt/issues",
-                "source": "https://github.com/firebase/php-jwt/tree/v6.10.2"
+                "source": "https://github.com/firebase/php-jwt/tree/v6.11.1"
             },
-            "time": "2024-11-24T11:22:49+00:00"
+            "time": "2025-04-09T20:32:01+00:00"
         },
         {
             "name": "phpmailer/phpmailer",
-            "version": "v6.9.3",
+            "version": "v6.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPMailer/PHPMailer.git",
-                "reference": "2f5c94fe7493efc213f643c23b1b1c249d40f47e"
+                "reference": "d1ac35d784bf9f5e61b424901d5a014967f15b12"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/2f5c94fe7493efc213f643c23b1b1c249d40f47e",
-                "reference": "2f5c94fe7493efc213f643c23b1b1c249d40f47e",
+                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/d1ac35d784bf9f5e61b424901d5a014967f15b12",
+                "reference": "d1ac35d784bf9f5e61b424901d5a014967f15b12",
                 "shasum": ""
             },
             "require": {
@@ -189,7 +189,7 @@
             "description": "PHPMailer is a full-featured email creation and transfer class for PHP",
             "support": {
                 "issues": "https://github.com/PHPMailer/PHPMailer/issues",
-                "source": "https://github.com/PHPMailer/PHPMailer/tree/v6.9.3"
+                "source": "https://github.com/PHPMailer/PHPMailer/tree/v6.12.0"
             },
             "funding": [
                 {
@@ -197,7 +197,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-11-24T18:04:13+00:00"
+            "time": "2025-10-15T16:49:08+00:00"
         },
         {
             "name": "platypustechnology/magratheaphp2",
@@ -205,12 +205,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PlatypusTechnology/MagratheaPHP2.git",
-                "reference": "c2588a0cf937278dec007e368f607df32e59937f"
+                "reference": "1e44818f9e6507487eaf3743b1a0f59f13702b9b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PlatypusTechnology/MagratheaPHP2/zipball/c2588a0cf937278dec007e368f607df32e59937f",
-                "reference": "c2588a0cf937278dec007e368f607df32e59937f",
+                "url": "https://api.github.com/repos/PlatypusTechnology/MagratheaPHP2/zipball/1e44818f9e6507487eaf3743b1a0f59f13702b9b",
+                "reference": "1e44818f9e6507487eaf3743b1a0f59f13702b9b",
                 "shasum": ""
             },
             "require": {
@@ -247,7 +247,7 @@
                 "issues": "https://github.com/PlatypusTechnology/MagratheaPHP2/issues",
                 "source": "https://github.com/PlatypusTechnology/MagratheaPHP2/tree/main"
             },
-            "time": "2025-01-06T03:59:36+00:00"
+            "time": "2025-10-22T19:26:15+00:00"
         },
         {
             "name": "scssphp/scssphp",
@@ -331,16 +331,16 @@
         },
         {
             "name": "tedivm/jshrink",
-            "version": "v1.7.0",
+            "version": "v1.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tedious/JShrink.git",
-                "reference": "7a35f5a4651ca2ce77295eb8a3b4e133ba47e19e"
+                "reference": "29ee510d684c22060040f4260a527206eb8199f1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tedious/JShrink/zipball/7a35f5a4651ca2ce77295eb8a3b4e133ba47e19e",
-                "reference": "7a35f5a4651ca2ce77295eb8a3b4e133ba47e19e",
+                "url": "https://api.github.com/repos/tedious/JShrink/zipball/29ee510d684c22060040f4260a527206eb8199f1",
+                "reference": "29ee510d684c22060040f4260a527206eb8199f1",
                 "shasum": ""
             },
             "require": {
@@ -375,7 +375,7 @@
             ],
             "support": {
                 "issues": "https://github.com/tedious/JShrink/issues",
-                "source": "https://github.com/tedious/JShrink/tree/v1.7.0"
+                "source": "https://github.com/tedious/JShrink/tree/v1.8.0"
             },
             "funding": [
                 {
@@ -387,7 +387,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-10-04T17:23:23+00:00"
+            "time": "2025-07-28T17:09:23+00:00"
         },
         {
             "name": "twbs/bootstrap",

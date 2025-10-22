@@ -39,7 +39,7 @@ class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
 	public function SetFeatures(){
 		parent::SetFeatures();
 		$this->LoadApi();
-		$this->features["appconfig"] = new AdminFeatureAppConfig(true);
+		$this->features["appconfig"] = new AdminFeatureAppConfig(false);
 		$this->features["apikey"] = new ApikeyAdmin();
 		$this->features["log"] = new AdminFeatureUserLog();
 		$this->LoadImagesAdmin();

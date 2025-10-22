@@ -1,4 +1,4 @@
-#!/bin/bash
+xit#!/bin/bash
 
 clear
 
@@ -25,7 +25,8 @@ echo
 CUR_DIR="$(pwd)"
 DEF_LOGS_PATH="$CUR_DIR/logs"
 DEF_BACKUPS_PATH="$CUR_DIR/backups"
-DEF_MEDIAS_PATH="$CUR_DIR/media"
+DEF_MEDIAS_PATH="$CUR_DIR/medias"
+DEF_CACHE_PATH="$CUR_DIR/cache"
 
 read -p "Enter logs path [$DEF_LOGS_PATH]: " LOGS_PATH
 LOGS_PATH=${LOGS_PATH:-$DEF_LOGS_PATH}
@@ -33,9 +34,11 @@ read -p "Enter backups path [$DEF_BACKUPS_PATH]: " BACKUPS_PATH
 BACKUPS_PATH=${BACKUPS_PATH:-$DEF_BACKUPS_PATH}
 read -p "Enter medias path [$DEF_MEDIAS_PATH]: " MEDIAS_PATH
 MEDIAS_PATH=${MEDIAS_PATH:-$DEF_MEDIAS_PATH}
+read -p "Enter cache path [$DEF_CACHE_PATH]: " CACHE_PATH
+CACHE_PATH=${CACHE_PATH:-$DEF_CACHE_PATH}
 
 # Create folders if they do not exist
-for DIR in "$LOGS_PATH" "$BACKUPS_PATH" "$MEDIAS_PATH"; do
+for DIR in "$LOGS_PATH" "$BACKUPS_PATH" "$MEDIAS_PATH" "$CACHE_PATH"; do
 	if [ ! -d "$DIR" ]; then
 		mkdir -p "$DIR"
 		echo "Created directory: $DIR"
@@ -65,6 +68,7 @@ echo "  db_pass = \"$DB_PASS\"" >> "$CONFIG_FILE"
 echo "  logs_path = \"$LOGS_PATH\"" >> "$CONFIG_FILE"
 echo "  backups_path = \"$BACKUPS_PATH\"" >> "$CONFIG_FILE"
 echo "  medias_path = \"$MEDIAS_PATH\"" >> "$CONFIG_FILE"
+echo "  cache_path = \"$CACHE_PATH\"" >> "$CONFIG_FILE"
 echo "  timezone = \"America/Sao_Paulo\"" >> "$CONFIG_FILE"
 echo "  app_url = \"$APP_URL\"" >> "$CONFIG_FILE"
 echo "  jwt_key = \"$JWT_KEY\"" >> "$CONFIG_FILE"
