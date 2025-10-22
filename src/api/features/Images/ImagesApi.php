@@ -26,8 +26,7 @@ class ImagesApi extends MagratheaApiControl {
 		$imageName = $id."_".$size;
 		if(@$_GET["stretch"] == '1') $imageName .= "-s";
 		if(@$_GET["placeholder"] == '1') $imageName .= "_placeholder";
-		$imageName .= ".webp";
-		ImageViewer::ViewQuickAccess($key, $imageName);
+		ImageViewer::ViewQuickAccess($key, $imageName.".webp");
 	}
 
 	public function GetById($params) {

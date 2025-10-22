@@ -12,6 +12,8 @@ use Magrathea2\Exceptions\MagratheaException;
 use MagratheaImages3\Helper;
 use MagratheaImages3\Images\Images;
 
+use function Magrathea2\p_r;
+
 class ImageResizer {
 
 	public bool $debug = false;
@@ -41,6 +43,9 @@ class ImageResizer {
 	public function DebugOn(): ImageResizer {
 		$this->debug = true;
 		return $this;
+	}
+	public function AddDebugArray(array $ds): void {
+		array_push($this->debugSteps, ...$ds);
 	}
 	public function PrintDebug(string $d): void {
 		if(!$this->debug) return;
@@ -72,6 +77,13 @@ class ImageResizer {
 		$h = $height == 0 ? $this->height : $height;
 		$this->PrintDebug("Creating blank image... of size (".$w."x".$h.")");
 		$this->newGdImage = imagecreatetruecolor($w, $h);
+		if($this->extension == "png") {
+			$this->PrintDebug("adding alpha transparency for png");
+			imagealphablending($this->newGdImage, false);
+			imagesavealpha($this->newGdImage, true);
+			$transparent = imagecolorallocatealpha($this->newGdImage, 255, 255, 255, 127);
+			imagefilledrectangle($this->newGdImage, 0, 0, $w, $h, $transparent);
+		}
 		$this->PrintDebug("OK!");
 		return $this->newGdImage;
 	}
@@ -89,115 +101,77 @@ class ImageResizer {
 		}
 	}
 
-	public function SimpleResize(int $w=0, int $h=0): bool {
-		if($w == 0) $w = $this->width;
-		if($h == 0) $h = $this->height;
-		if(empty($this->newGdImage)) $this->CreateBlank($w, $h);
-		try {
-			$gd = @$this->GetRawGD();
-		} catch(\Exception $ex) {
-			throw new MagratheaException($ex->getMessage(), 500);
-		}
-		if(!$gd) {
-			$error = error_get_last();
-			throw new MagratheaException($error["message"], 500);
-		}
-		$created = imagecopyresampled(
-			$this->newGdImage, $gd,
-			0,0,0,0,
-			$w, $h,
-			$this->image->width, $this->image->height
+	public function CopyResampled(
+		$gd,
+		int $dst_x, int $dst_y,
+		int $src_x, int $src_y,
+		int $dst_width, int $dst_height,
+		int $src_width, int $src_height,
+	) {
+		$debugResampled = " IMAGECOPYRESAMPLED: ";
+		$debugResampled .= " [dst_x => ".$dst_x."][dst_y => ".$dst_y."] /";
+		$debugResampled .= " [src_x => ".$src_x."][src_y => ".$src_y."] /";
+		$debugResampled .= " [dst_width => ".$dst_width."][dst_height => ".$dst_height."] /";
+		$debugResampled .= " [src_width => ".$src_width."][src_height => ".$src_height."]";
+		$this->PrintDebug($debugResampled);
+		$newGD = $this->CreateBlank($dst_width, $dst_height);
+		$createResized = imagecopyresampled(
+			$newGD, $gd,
+			$dst_x, $dst_y,
+			$src_x, $src_y,
+			$dst_width, $dst_height,
+			$src_width, $src_height
 		);
-		if(!$created) {
+		if(!$createResized) {
 			throw new MagratheaApiException("Could not generate image", 500);
 		}
-		$this->PrintDebug("Simply Resizing image from ".$this->image->width."x".$this->image->height." to ".$w."x".$h);
-		return true;
-	}
-
-	public function ComplexResize($points) {
-		if(empty($this->newGdImage)) $this->CreateBlank();
-		$gd = $this->GetRawGD();
-		$created = imagecopyresampled(
-			$this->newGdImage, $gd,
-			$points["dst_x"], $points["dst_y"],
-			$points["src_x"], $points["src_y"],
-			$this->width, $this->height,
-			$this->image->width, $this->image->height
-		);
-		if(!$created) {
-			throw new MagratheaApiException("Could not generate image", 500);
-		}
-		$debug = "Complex Resizing image";
-		$debug .= " from ".$this->image->width."x".$this->image->height;
-		$debug .= " to ".$this->width."x".$this->height;
-		$debug .= " / from point ".$points["src_x"].",".$points["src_y"];
-		$debug .= " to point ".$points["dst_x"].",".$points["dst_y"];
-		$this->PrintDebug($debug);
-		return true;
-	}
-
-	public function SimpleCrop(int $x=0, int $y=0, int $w=0, int $h=0) {
-		if(empty($this->newGdImage)) $this->CreateBlank();
-		$points = [
-			'x' => $x,
-			'y' => $y,
-			'width' => $w == 0 ? $this->width : $w,
-			'height' => $h == 0 ? $this->height : $h,
-		];
-		try {
-			$this->newGdImage = imageCrop($this->newGdImage, $points);
-		} catch(Exception $ex) {
-			throw new MagratheaApiException("Could not crop image: ".$ex->getMessage(), 500, $points);
-		}
-		$debug = "Cutting image";
-		$debug .= " to size ".$points["width"]."x".$points["height"];
-		$debug .= " from point ".$points["x"].",".$points["y"];
-		$this->PrintDebug($debug);
-		return true;
+		return $newGD;
 	}
 
 	public function Resize(): bool {
-		$originalAspect = $this->GetAspectRatio($this->image->width, $this->image->height);
-		$this->PrintDebug("Original Aspect Ratio: ".$originalAspect['ratio']." > ".$originalAspect["format"]);
-		$targetAspect = $this->GetAspectRatio($this->width, $this->height);
-		$this->PrintDebug("Next Aspect Ratio: ".$targetAspect['ratio']." > ".$targetAspect["format"]);
-
 		$this->AdjustPlaceholder();
-		if(
-			!$this->keepAspectRatio ||
-			$originalAspect["ratio"] == $targetAspect["ratio"]
-		) {
-			$this->PrintDebug("Same Aspect Ratio");
-			return $this->SimpleResize();
+		$calculator = new ResampleCalculator(
+			$this->image->width, $this->image->height,
+			$this->width, $this->height
+		);
+		$gd = $this->GetRawGD();
+
+		$calculator->keepAspectRatio = $this->keepAspectRatio;
+		$data = $calculator->Calculate();
+		$this->AddDebugArray($calculator->GetDebug());
+
+		$debugCalc = "Resizing Calculator:";
+		$debugCalc .= " [resize => ".$data["resize"]."]";
+		if($data["resize"]) {
+			$debugCalc .= " [resize_w => ".$data["resize_w"]."][resize_y => ".$data["resize_h"]."] /";
 		}
-		if($targetAspect["ratio"] > $originalAspect["ratio"]) {
-			$width = $this->width;
-			$height = ceil($width / $originalAspect["ratio"]);
-			$this->PrintDebug("Cut horizontal");
-			$this->SimpleResize($width, $height);
-			$this->SimpleCrop();
-		} else {
-			$this->PrintDebug("Cut vertical");
-			$height = $this->height;
-			$width = ceil($height * $originalAspect["ratio"]);
-			$this->SimpleResize($width, $height);
-			$middle = $width / 2;
-			$x = floor($middle - ($this->width / 2));
-			$this->SimpleCrop($x, 0);
+		$debugCalc .= " [dst_x => ".$data["dst_x"]."][dst_y => ".$data["dst_y"]."] /";
+		$debugCalc .= " [src_x => ".$data["src_x"]."][src_y => ".$data["src_y"]."] /";
+		$debugCalc .= " [dst_width => ".$data["dst_width"]."][dst_height => ".$data["dst_height"]."] /";
+		$debugCalc .= " [src_width => ".$data["src_width"]."][src_height => ".$data["src_height"]."]";
+		$this->PrintDebug($debugCalc);
+
+		if($data["resize"]) {
+			$resized = $this->CopyResampled(
+				$gd, 0, 0, 0, 0, 
+				$data["resize_w"], $data["resize_h"],
+				$data["src_width"], $data["src_height"]
+			);
+			$data["src_width"] = $data["resize_w"];
+			$data["src_height"] = $data["resize_h"];
+			$data["src_width"] = $data["dst_width"];
+			$gd = $resized;
 		}
+
+		$this->CopyResampled(
+			$gd,
+			$data["dst_x"], $data["dst_y"],
+			$data["src_x"], $data["src_y"],
+			$data["dst_width"], $data["dst_height"],
+			$data["src_width"], $data["src_height"]
+		);
 
 		return true;
-	}
-	public function GetAspectRatio($w, $h): array {
-		$aspectRatio = $w / $h;
-		$format = ($aspectRatio == 1 ? "square" : (
-			$aspectRatio > 1 ? "landscape" : "portrait"
-		));
-		return [
-			"ratio" => $aspectRatio,
-			"format" => $format,
-		];
 	}
 
 	public function CheckFolder(): bool {
@@ -241,25 +215,12 @@ class ImageResizer {
 	}
 
 	public function SaveWebp(): bool {
-		$this->extension = "webp";
+		$this->PrintDebug("saving image");
 		try {
 			$gd = $this->newGdImage;
-			$fileName = $this->newFile.".".$this->extension;
-			switch($this->extension) {
-				case "png":
-				case "gif":
-					imagepalettetotruecolor($gd);
-					imagealphablending($gd, true);
-					imagesavealpha($gd, true);
-				case "jpg":
-				case "jpeg":
-				case "webp":
-				case "wbmp":
-				case "bmp":
-				default:
-					$quality = $this->placeholder ? 10: $this->quality;
-					return imagewebp($gd, $fileName, $quality);
-			}
+			$fileName = $this->newFile.".webp";
+			$quality = $this->placeholder ? 10: $this->quality;
+			return imagewebp($gd, $fileName, $quality);
 		} catch(Exception $ex) {
 			throw new MagratheaApiException("Error generating Image: ".$ex->getMessage(), true, 500, $ex);
 		}
@@ -275,7 +236,8 @@ class ImageResizer {
 			case "bmp":
 				return imagecreatefromwbmp($rawF);
 			case "png":
-				return imagecreatefrompng($rawF);
+				$rawF = imagecreatefrompng($rawF);
+				return $rawF;
 			case "webp":
 				return imagecreatefromwebp($rawF);
 			case "wbmp":
