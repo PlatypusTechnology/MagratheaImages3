@@ -6,7 +6,8 @@ logs/*.log
 logs/
 plugins
 database/*.sql
-medias/*
+medias
+backups
 
 docker/.env
 vendor
