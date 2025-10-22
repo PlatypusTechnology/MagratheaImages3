@@ -9,9 +9,12 @@
 	db_pass = "password"
 	logs_path = "/var/www/logs"
 	backups_path = "/var/www/backups"
-	time_zone = "America/Sao_Paulo"
-	server_url = "http://contacts.magrathea.localhost.com:8080"
+	medias_path = "/var/www/medias"
+	timezone = "America/Sao_Paulo"
+	app_url = "http://contacts.magrathea.localhost.com:8080"
 	jwt_key = ""
+	secure_api = true
+	webp_quick_access = true
 
 [production]
 	db_host = "127.0.0.1"
@@ -20,6 +23,9 @@
 	db_pass = "password123"
 	logs_path = ""
 	backups_path = ""
+	medias_path = "/var/www/medias"
 	timezone = "America/Sao_Paulo"
 	app_url = "https://platypusweb.com"
 	jwt_key = ""
+	secure_api = true
+	webp_quick_access = true
