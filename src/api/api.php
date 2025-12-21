@@ -5,6 +5,7 @@ namespace MagratheaImages3;
 use AuthApi;
 use Magrathea2\Config;
 use Magrathea2\ConfigApp;
+use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\MagratheaApi;
 use Magrathea2\MagratheaHelper;
 use Magrathea2\MagratheaPHP;
@@ -78,9 +79,9 @@ class MagratheaImagesApi extends MagratheaApi {
 	private function AddImages() {
 		$api = new ImagesApi();
 		$this->Add("POST", "upload", $api, "Upload", self::OPEN);
-		$this->Add("POST", "upload-url", $api, "Upload", self::OPEN, "post: [key], [url]");
+		$this->Add("POST", "upload-url", $api, "Upload", self::OPEN, "post: [private_key], [url]");
 		$this->Add("POST", "key/:key/upload", $api, "Upload", self::OPEN);
-		$this->Add("POST", "key/:key/upload-url", $api, "Upload", self::OPEN, "post: [url]");
+		$this->Add("POST", "key/:key/upload-url", $api, "Upload", self::OPEN, "(private_key) post: [url]");
 		$this->Add("DELETE", "key/:key/delete/:id", $api, "Remove", self::OPEN);
 		if(Config::Instance()->Get("secure_api")) {
 			$this->SecureImages();

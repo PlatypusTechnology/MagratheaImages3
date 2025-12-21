@@ -139,10 +139,13 @@ class ImagesApi extends MagratheaApiControl {
 
 	public function Upload($params) {
 		$post = $this->GetPost();
-		if($params["key"]) {
+		if(@$params["key"]) {
 			$keyVal = $params["key"];
 		}	else {
 			$keyVal = @$post["key"];
+		}
+		if(!$keyVal) {
+			throw new MagratheaApiException("Invalid Key [".$keyVal."] ", 400);
 		}
 		$url = @$post["url"];
 		try {

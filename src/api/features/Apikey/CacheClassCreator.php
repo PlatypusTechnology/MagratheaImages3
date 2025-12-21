@@ -1,6 +1,8 @@
 <?php
 namespace MagratheaImages3\Apikey;
 
+use Exception;
+
 use function Magrathea2\now;
 
 class CacheClassCreator {
@@ -44,7 +46,11 @@ class CacheClassCreator {
 	}
 	
 	public function Generate() {
-		return file_put_contents($this->GetFile(), $this->GetCode());
+		try {
+			return @file_put_contents($this->GetFile(), $this->GetCode());
+		} catch(Exception $ex) {
+			throw $ex;
+		}
 	}
 
 }

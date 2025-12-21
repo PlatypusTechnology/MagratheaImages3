@@ -1,6 +1,14 @@
 <?php
-
 require "../vendor/autoload.php";
+
+$sentryDsn = getenv('SENTRY_DSN');
+if ($sentryDsn) {
+	\Sentry\init([ 'dsn' => $sentryDsn ]);
+	set_exception_handler(function (Throwable $e) {
+		\Sentry\captureException($e);
+	});
+}
+
 include("shared/Helper.php");
 
 try {
@@ -13,10 +21,11 @@ try {
 			"admin/MediaManager"
 		)
 		->AddFeature("Apikey", "Images")
-//		->Debug()
-//		->Dev()
+		// ->Debug()
+		// ->Dev()
 //		->StartDB()
 		->Load();
 } catch(Exception $ex) {
 	\Magrathea2\p_r($ex);
 }
+

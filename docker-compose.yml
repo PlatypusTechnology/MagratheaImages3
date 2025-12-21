@@ -28,6 +28,8 @@ services:
       - ./backups:/var/www/backups
       - ./medias:/var/www/medias
       - ./cache:/var/www/cache
+    environment:
+      - SENTRY_DSN=${SENTRY_DSN}
     ports:
       - 8081:80
       - 443

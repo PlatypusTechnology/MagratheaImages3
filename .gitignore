@@ -13,7 +13,7 @@ docker/.env
 vendor
 src/vendor
 src/vendor/*
-.composer.lock
+src/composer.lock
 
 Magrathea/
 log*.txt

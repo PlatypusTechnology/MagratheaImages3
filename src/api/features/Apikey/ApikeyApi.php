@@ -66,9 +66,8 @@ class ApikeyApi extends MagratheaApiControl {
 	// {"secret":<< api-secret >>, "folder":<< folder-name >>}
 	public function NewKey($params) {
 		$secret = ConfigApp::Instance()->Get("secret");
-		if(@$_POST["secret"] != $secret) {
-			throw new MagratheaApiException("invalid secret for key creation");
-		}
+		if(!$secret) throw new MagratheaApiException("Magrathea Images setup not complete");
+		if(@$_POST["secret"] != $secret) throw new MagratheaApiException("invalid secret for key creation");
 		try {
 			$k = $this->service->Create($_POST);
 		} catch(Exception $ex) {

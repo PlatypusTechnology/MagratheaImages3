@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.2
+2025-12-21
+- **new:** implementing sentry
+- **new:** caddy sample file
+- **fix:** invalid variable in `upload-url` error
+
 ## 3.2.1
 2025-02-06
 - png images generate webp images, not png (this will improve size and avoid looking for two image types)

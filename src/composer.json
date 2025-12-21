@@ -1,5 +1,15 @@
 {
+	"name": "platypustechnology/magratheaimages",
+	"description": "Magrathea Images 3",
 	"require": {
-		"platypustechnology/magratheaphp2": "dev-main"
+		"platypustechnology/magratheaphp2": "dev-master",
+		"sentry/sentry": "^3.22",
+		"symfony/http-client": "^6.4",
+		"nyholm/psr7": "^1.8"
+	},
+	"config": {
+		"allow-plugins": {
+			"php-http/discovery": true
+		}
 	}
 }

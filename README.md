@@ -24,3 +24,19 @@ GRANT ALL PRIVILEGES ON user.* TO 'user'@'%' WITH GRANT OPTION;
 ==[s]code_namespace==|>>MagratheaImages3>>;;
 ```
 
+## setup:
+### App Configuration: 
+add `secret` item: as the hash that will be called for creating a new key
+
+
+## usage:
+### create new key
+`/key/create`
+payload:
+```
+{
+	"secret":<< api-secret >>,
+	"folder":<< folder-name >>
+}
+```
+
