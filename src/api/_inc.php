@@ -1,12 +1,8 @@
 <?php
 require "../vendor/autoload.php";
 
-$sentryDsn = getenv('SENTRY_DSN');
-if ($sentryDsn) {
-	\Sentry\init([ 'dsn' => $sentryDsn ]);
-	set_exception_handler(function (Throwable $e) {
-		\Sentry\captureException($e);
-	});
+if(file_exists("sentry.php")){
+	include("sentry.php");
 }
 
 include("shared/Helper.php");
