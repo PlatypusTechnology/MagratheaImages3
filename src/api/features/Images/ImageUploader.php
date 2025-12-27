@@ -12,6 +12,7 @@ class ImageUploader {
 
 	public $file = [];
 	public Apikey|null $key = null;
+	public ?string $subFolder;
 	public $extensions = ["jpg", "jpeg", "png", "bmp", "webp", "wbmp"];
 
 	public function SetKey(Apikey $key): ImageUploader {
@@ -25,11 +26,16 @@ class ImageUploader {
 		$this->file = $file;
 		return $this;
 	}
+	public function SetSubfolder(string $folder): ImageUploader {
+		$this->subFolder = $folder;
+		return $this;
+	}
 
 	public function CreateImage(): Images {
 		$image = new Images();
 		$image->folder = $this->key->folder;
 		$image->upload_key = $this->key->GetID();
+		$image->subfolder = $this->subFolder;
 		return $image;
 	}
 

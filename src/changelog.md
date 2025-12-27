@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.0
+2025-12-29
+- **new:** subfolder for images
+
 ## 3.2.2
 2025-12-21
 - **new:** implementing sentry

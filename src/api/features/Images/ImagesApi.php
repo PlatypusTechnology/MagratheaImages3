@@ -150,18 +150,20 @@ class ImagesApi extends MagratheaApiControl {
 		$url = @$post["url"];
 		try {
 			$key = $this->GetApiKeyByValue($keyVal);
+			$subfolder = @$post["subfolder"];
 			if($url) {
-				return $this->UploadUrlWithKey($key, $url);
+				return $this->UploadUrlWithKey($key, $url, $subfolder);
 			} else {
-				return $this->UploadWithKey($key);
+				return $this->UploadWithKey($key, $subfolder);
 			}
 		} catch(\Exception $e) {
 			throw $e;
 		}
 	}
 
-	public function UploadWithKey($key) {
+	public function UploadWithKey($key, ?string $subfolder=null) {
 		$uploader = new ImageUploader();
+		if($subfolder) $uploader->SetSubfolder($subfolder);
 		try {
 			$uploader->SetKey($key);
 			if(empty($_FILES)) {
@@ -174,10 +176,11 @@ class ImagesApi extends MagratheaApiControl {
 		}
 	}
 
-	public function UploadUrlWithKey($key, string $url) {
+	public function UploadUrlWithKey($key, string $url, ?string $subfolder=null) {
 		if(!filter_var($url, FILTER_VALIDATE_URL))
 			throw new MagratheaApiException("not a valid url: [".$url."]");
 		$uploader = new ImageUploader();
+		if($subfolder) $uploader->SetSubfolder($subfolder);
 		try {
 			$uploader->SetKey($key);
 			return $uploader->UploadUrl($url);

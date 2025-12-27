@@ -2,7 +2,6 @@
 
 use Magrathea2\Config;
 use Magrathea2\ConfigApp;
-use Magrathea2\Tests\TestsHelper;
 use MagratheaImages3\Apikey\Apikey;
 
 include_once(__DIR__."/../_inc.php");
