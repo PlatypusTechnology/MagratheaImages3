@@ -44,7 +44,7 @@ class ApikeyApi extends MagratheaApiControl {
 		$page = @$_GET["page"] ?? 0;
 		$subfolder = @$_GET["subfolder"];
 		$imageControl = new ImagesControl();
-		$imgs = $imageControl->GetLast($key->id, $page, $count);
+		$imgs = $imageControl->GetLast($key->id, $page, $count, $subfolder);
 		return [
 			"private_key" => $key->private_key,
 			"public_key" => $key->public_key,
