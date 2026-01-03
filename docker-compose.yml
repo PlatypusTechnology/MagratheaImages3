@@ -28,6 +28,7 @@ services:
       - ./backups:/var/www/backups
       - ./medias:/var/www/medias
       - ./cache:/var/www/cache
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/custom.ini  # <--- Add this line
     environment:
       - SENTRY_DSN=${SENTRY_DSN}
     ports:

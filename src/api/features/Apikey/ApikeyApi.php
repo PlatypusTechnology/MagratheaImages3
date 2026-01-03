@@ -3,11 +3,8 @@
 namespace MagratheaImages3\Apikey;
 
 use Exception;
-use Magrathea2\Admin\Features\AppConfig\AppConfig;
-use Magrathea2\Admin\Features\AppConfig\AppConfigControl;
 use Magrathea2\ConfigApp;
 use Magrathea2\Exceptions\MagratheaApiException;
-use Magrathea2\Exceptions\MagratheaException;
 use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\Apikey;
 use MagratheaImages3\Images\ImagesControl;
@@ -45,6 +42,7 @@ class ApikeyApi extends MagratheaApiControl {
 		$key = $this->_GetKey($params);
 		$count = 12;
 		$page = @$_GET["page"] ?? 0;
+		$subfolder = @$_GET["subfolder"];
 		$imageControl = new ImagesControl();
 		$imgs = $imageControl->GetLast($key->id, $page, $count);
 		return [

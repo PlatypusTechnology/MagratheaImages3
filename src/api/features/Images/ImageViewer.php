@@ -128,10 +128,12 @@ class ImageViewer {
 
 	public function ViewFile() {
 		if($this->debugOn) return $this->DebugView();
-		$webp = boolval(Config::Instance()->Get("webp_quick_access"));
+
+		$webp = $this->rawFile ? false : boolval(Config::Instance()->Get("webp_quick_access"));
 		$ext = $webp ? "webp" : $this->image->extension;
 		$this->file = $this->rawFile ? $this->file : $this->file.".".$ext;
 		self::HeaderExtension($ext);
+
 		header("Content-Length: ".filesize($this->file));
 		// dump the picture and stop the script
 		$fp = fopen($this->file, 'rb');

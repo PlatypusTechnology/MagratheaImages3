@@ -7,12 +7,14 @@ use MagratheaImages3\Apikey\ApikeyControl;
 
 class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
 
-	public function GetLast(string $key, $page=0, $amount=12): array {
+	public function GetLast(string $key, $page=0, $amount=12, ?string $subfolder = null): array {
+		$where = ["upload_key" => $key];
+		if($subfolder != null) $where["subfolder"] = $subfolder;
 		$query = Query::Select()
 			->Obj(new Images())
 			->Limit($amount)
 			->Page($page)
-			->Where(["upload_key" => $key])
+			->Where($where)
 			->OrderBy("id DESC");
 		return $this->Run($query);
 	}

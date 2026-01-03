@@ -71,7 +71,7 @@ class MagratheaImagesApi extends MagratheaApi {
 		$api = new ApikeyApi();
 		$this->Add("GET", "keys", $api, "GetAll", self::LOGGED);
 		$this->Add("GET", "key/:key/view", $api, "GetByKey", self::OPEN);
-		$this->Add("GET", "key/:key/images", $api, "ViewImages", self::OPEN);
+		$this->Add("GET", "key/:key/images", $api, "ViewImages", self::OPEN, "GET: subfolder=?");
 		$this->Add("GET", "key/:public_key/cached", $api, "GetCached", self::LOGGED);
 		$this->Add("POST", "key/create", $api, "NewKey", self::OPEN);
 	}

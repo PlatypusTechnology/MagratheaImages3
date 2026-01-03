@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.1
+2026-01-01
+- **new:** get images by subfolder
+- **fix:** getting svg raw files
+
 ## 3.3.0
 2025-12-29
 - **new:** subfolder for images

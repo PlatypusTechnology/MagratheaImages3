@@ -10,6 +10,10 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 		return $this;
 	}
 
+	public function CanResize(): bool {
+		return ($this->extension != "svg");
+	}
+
 	public function FromUploadFile(array $file): Images {
 		$imageName = str_replace(" ", "_", $file["name"]);
 		$imageNameArr = explode(".", $imageName);

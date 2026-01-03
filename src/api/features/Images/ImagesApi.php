@@ -116,6 +116,7 @@ class ImagesApi extends MagratheaApiControl {
 		$forceGen = @$_GET["generate"] == '1';
 		try {
 			$image = $this->GetById($params);
+			if(!$image->CanResize()) return $this->ViewRaw($params);
 			$viewer = new ImageViewer($image);
 			if($placeholder) $viewer->Placeholder();
 			if($forceGen) $viewer->ForceGeneration();
@@ -201,6 +202,7 @@ class ImagesApi extends MagratheaApiControl {
 		try {
 			if($size == "raw") return $this->ViewRaw($params);
 			$image = $this->GetById($params);
+			if(!$image->CanResize()) return $this->ViewRaw($params);
 			$viewer = new ImageViewer($image);
 			$viewer->DontSave();
 			$viewer->ForceGeneration();
