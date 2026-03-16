@@ -1,4 +1,4 @@
-images.platypusweb.com.br {
+images.guia.lol {
 	# Block access to all hidden files and directories (starting with a dot)
 	@hiddenFiles path_regexp hiddenFiles {.*(?:/\.[^/]+)+}
 	respond @hiddenFiles 403
@@ -22,13 +22,13 @@ images.platypusweb.com.br {
 	# If not an existing file, apply rewrite rules
 	handle {
 		@rule1 path_regexp r1 ^/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)/(.*)$
-		rewrite @rule1 /index.php?magrathea_control={re.r1.1}&magrathea_action={re.r1.2}&magrathea_params={re.r1.3}
+		rewrite @rule1 /index.php?magrathea_control={re.r1.1}&magrathea_action={re.r1.2}&magrathea_params={re.r1.3}&{query}
 
 		@rule2 path_regexp r2 ^/([a-zA-Z0-9_-]+)/(.*)$
-		rewrite @rule2 /index.php?magrathea_control={re.r2.1}&magrathea_action={re.r2.2}
+		rewrite @rule2 /index.php?magrathea_control={re.r2.1}&magrathea_action={re.r2.2}&{query}
 
 		@rule3 path_regexp r3 ^/(.*)$
-		rewrite @rule3 /index.php?magrathea_control={re.r3.1}
+		rewrite @rule3 /index.php?magrathea_control={re.r3.1}&{query}
 
 		php_fastcgi unix//run/php/php8.4-fpm.sock {
 			env HTTP_AUTHORIZATION {http.request.header.Authorization}
