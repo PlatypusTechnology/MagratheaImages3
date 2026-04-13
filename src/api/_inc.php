@@ -14,7 +14,8 @@ try {
 		->AddCodeFolder(
 			"admin",
 			"admin/GeneratedFileManager",
-			"admin/MediaManager"
+			"admin/MediaManager",
+			"admin/Swagger",
 		)
 		->AddFeature("Apikey", "Images")
 		// ->Debug()

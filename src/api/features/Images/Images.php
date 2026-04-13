@@ -26,12 +26,17 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 		return $this;
 	}
 
-	public function FromUrl($url): Images {
+	public function FromUrl($url, ?string $detectedExt = null): Images {
 		$urlPieces = explode('/', $url);
 		$file = end($urlPieces);
 		$file = str_replace(" ", "_", $file);
 		$pieces = explode(".", $file);
-		$this->extension = array_pop($pieces);
+		if(count($pieces) > 1) {
+			$this->extension = array_pop($pieces);
+		} else {
+			$this->extension = $detectedExt;
+			if($detectedExt) $file .= '.'.$detectedExt;
+		}
 		$this->name = implode(" ", $pieces);
 		$this->SetFilename($file);
 		return $this;
