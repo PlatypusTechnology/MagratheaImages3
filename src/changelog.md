@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.3.2
+2026-04-12
+- **new:** swagger Admin Feature.
+- **new:** docker creation and destroy by session
+- **fix:** now `upload-url` don't block uploads without valid extenstion; checks mime type instead.
+
 ## 3.3.1
 2026-01-01
 - **new:** get images by subfolder

@@ -1,9 +1,9 @@
 <?php
 // auto generated file
 $version = [
-  'timestamp' => '2024-05-22T23:44:28',
-  'commit' => '469cba413bca8cff47f0628b4ca0635d819b6207',
-  'commit_author' => 'Paulo Martins <paulovelho@paulovelho.com>',
-  'commit_date' => '2024-05-22T23:44:16',
-  'commit_line' => '469cba4 adding remove functions'
+  'timestamp' => '2026-04-12T20:14:00',
+  'commit' => '209ad10f8b4607e3e928f65f343770b473a009a0',
+  'commit_author' => 'Paulo Henrique Martins <paulovelho@paulovelho.com>',
+  'commit_date' => '2026-04-12T20:10:35',
+  'commit_line' => '209ad10 Merge pull request #4 from PlatypusTechnology/fix/dont-block-extensions'
 ];
