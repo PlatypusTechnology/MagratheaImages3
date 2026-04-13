@@ -1,0 +1,46 @@
+version: '3.7'
+# Project name is set via -p flag (session name)
+# Required env vars (exported by docker-install.sh): SESSION, APP_PORT
+
+services:
+
+  mag_sql:
+    image: mariadb
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database:/home/backups
+    env_file:
+      - ./docker/.env.${SESSION}
+    ports:
+      - 3306
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "--silent"]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+
+  magrathea_images:
+    hostname: images.magrathea.localhost.com
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - ./src:/var/www/html
+      - ./src/api/compress:/var/www/compress
+      - ./logs:/var/www/logs
+      - ./backups:/var/www/backups
+      - ./medias:/var/www/medias
+      - ./cache:/var/www/cache
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    env_file:
+      - ./docker/.env.${SESSION}
+    ports:
+      - ${APP_PORT:-8081}:80
+      - 443
+    depends_on:
+      mag_sql:
+        condition: service_healthy
+
+volumes:
+  db_data:

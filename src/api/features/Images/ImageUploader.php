@@ -14,6 +14,15 @@ class ImageUploader {
 	public Apikey|null $key = null;
 	public ?string $subFolder = null;
 	public $extensions = ["jpg", "jpeg", "png", "bmp", "webp", "wbmp", "svg"];
+	private static $allowedMimes = [
+		'image/jpeg'   => 'jpg',
+		'image/png'    => 'png',
+		'image/webp'   => 'webp',
+		'image/bmp'    => 'bmp',
+		'image/x-bmp'  => 'bmp',
+		'image/gif'    => 'gif',
+		'image/svg+xml' => 'svg',
+	];
 
 	public function SetKey(Apikey $key): ImageUploader {
 		$this->key = $key;
@@ -93,16 +102,18 @@ class ImageUploader {
 	}
 
 	public function UploadUrl($url) {
-		$url = strtok($url, '?');
+		$cleanUrl = strtok($url, '?');
 		try {
 			$path = $this->GetDestination();
 			$this->ValidateDestination($path);
-			$image = $this->CreateImage()->FromUrl($url);
-			$this->ValidateExtension($image->extension);
+
+			$content = $this->GetExternalContent($url);
+			$ext = $this->ValidateMime($content);
+
+			$image = $this->CreateImage()->FromUrl($cleanUrl, $ext);
 
 			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
-//			return " ... uploading ".$url." to ".$finalName;
-			file_put_contents($finalName, $this->GetExternalContent($url));
+			file_put_contents($finalName, $content);
 			if(file_exists($finalName)){
 				list($width, $height, $mime) = getimagesize($finalName);
 				$image->width = $width;
@@ -138,6 +149,15 @@ class ImageUploader {
 			throw new MagratheaApiException("invalid image extension: [".$ext."]", 415, $ext);
 		}
 		return true;
+	}
+
+	public function ValidateMime(string $content): string {
+		$finfo = new \finfo(FILEINFO_MIME_TYPE);
+		$mime = $finfo->buffer($content);
+		if(!isset(self::$allowedMimes[$mime])) {
+			throw new MagratheaApiException("invalid image type: [".$mime."]", 415, $mime);
+		}
+		return self::$allowedMimes[$mime];
 	}
 
 	public function ValidateUpload(): bool {
