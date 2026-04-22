@@ -28,6 +28,13 @@ GRANT ALL PRIVILEGES ON user.* TO 'user'@'%' WITH GRANT OPTION;
 ### App Configuration: 
 add `secret` item: as the hash that will be called for creating a new key
 
+### Clear database:
+this will delete all api keys and image references!
+```sql
+TRUNCATE TABLE `apikey`;
+TRUNCATE TABLE `images`;
+```
+
 
 ## usage:
 ### create new key
@@ -39,4 +46,5 @@ payload:
 	"folder":<< folder-name >>
 }
 ```
+
 
