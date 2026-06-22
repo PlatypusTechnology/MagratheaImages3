@@ -40,8 +40,8 @@ class ApikeyApi extends MagratheaApiControl {
 
 	public function ViewImages($params) {
 		$key = $this->_GetKey($params);
-		$count = 12;
-		$page = @$_GET["page"] ?? 0;
+		$count = @$_GET["count"] ? intval($_GET["count"]) : 12;
+		$page = intval(@$_GET["page"]);
 		$subfolder = @$_GET["subfolder"];
 		$imageControl = new ImagesControl();
 		$imgs = $imageControl->GetLast($key->id, $page, $count, $subfolder);
