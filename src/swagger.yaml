@@ -8,8 +8,8 @@ info:
     - **Public mode**: images are accessed by ID only (`/image/:id/...`)
     - **Secure mode**: images require a public key in the path (`/image/:key/:id/...`)
 
-    Upload endpoints accept either a `private_key` in the POST body or a key value in the
-    URL path (`:key`). Deletion also requires a private key.
+    Upload endpoints accept either a `private_key` in the POST body or the `private_key`
+    in the URL path. Deletion also requires the private key.
   version: "3.3.1"
 
 servers:
@@ -439,18 +439,18 @@ paths:
         "401":
           description: Unauthorized
 
-  /key/{key}/view:
+  /key/{private_key}/view:
     get:
       tags: [keys]
-      summary: Get a key by its public or private key value
+      summary: Get a key by its private key value
       operationId: getKeyByValue
       parameters:
-        - name: key
+        - name: private_key
           in: path
           required: true
           schema:
             type: string
-          example: "abc123def456"
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m"
       responses:
         "200":
           description: The API key object
@@ -465,19 +465,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
-  /key/{key}/images:
+  /key/{private_key}/images:
     get:
       tags: [keys]
       summary: List images for a key
       description: Returns the last 12 uploaded images for the given key, paginated.
       operationId: getKeyImages
       parameters:
-        - name: key
+        - name: private_key
           in: path
           required: true
           schema:
             type: string
-          example: "abc123def456"
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m"
         - name: page
           in: query
           schema:
@@ -499,21 +499,21 @@ paths:
         "404":
           description: Key not found
 
-  /key/{public_key}/cached:
+  /key/{private_key}/cached:
     get:
       tags: [keys]
       summary: Get cached key data
-      description: Returns the cached representation of a key looked up by its public key. Requires authentication.
+      description: Returns the cached representation of a key looked up by its private key. Requires authentication.
       operationId: getCachedKey
       security:
         - BearerAuth: []
       parameters:
-        - name: public_key
+        - name: private_key
           in: path
           required: true
           schema:
             type: string
-          example: "abc123def456"
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m"
       responses:
         "200":
           description: Cached key data
@@ -654,14 +654,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
-  /key/{key}/upload:
+  /key/{private_key}/upload:
     post:
       tags: [upload]
       summary: Upload an image (key in path)
       description: Uploads an image file using the private key supplied in the URL path.
       operationId: uploadImageWithKey
       parameters:
-        - name: key
+        - name: private_key
           in: path
           required: true
           schema:
@@ -694,14 +694,14 @@ paths:
                   - $ref: "#/components/schemas/UploadSuccessResponse"
                   - $ref: "#/components/schemas/UploadFailResponse"
 
-  /key/{key}/upload-url:
+  /key/{private_key}/upload-url:
     post:
       tags: [upload]
       summary: Upload an image from a URL (key in path)
       description: Downloads an image from a remote URL using the private key in the URL path.
       operationId: uploadImageFromUrlWithKey
       parameters:
-        - name: key
+        - name: private_key
           in: path
           required: true
           schema:
@@ -735,7 +735,7 @@ paths:
         "400":
           description: Invalid URL or key
 
-  /key/{key}/delete/{id}:
+  /key/{private_key}/delete/{id}:
     delete:
       tags: [upload]
       summary: Delete an image
@@ -744,7 +744,7 @@ paths:
         Requires the **private key** of the key that owns the image.
       operationId: deleteImage
       parameters:
-        - name: key
+        - name: private_key
           in: path
           required: true
           schema:
@@ -1116,14 +1116,14 @@ paths:
 
   # ── Images — Secure mode ────────────────────────────────────────────────────
 
-  /image/{key}/{id}/details:
+  /image/{public_key}/{id}/details:
     get:
       tags: [images-secure]
       summary: Get image metadata (secure mode)
       description: Returns the image record. Requires the public key in the path. Only available when `secure_api` is enabled.
       operationId: getImageDetailsSecure
       parameters:
-        - name: key
+        - name: public_key
           in: path
           required: true
           schema:
@@ -1148,14 +1148,14 @@ paths:
         "400":
           description: Key-image mismatch
 
-  /image/{key}/{id}:
+  /image/{public_key}/{id}:
     get:
       tags: [images-secure]
       summary: View image — auto size (secure mode)
       description: Serves the image binary. Same size/stretch/placeholder/generate params as public mode. Only available when `secure_api` is enabled.
       operationId: viewImageSecure
       parameters:
-        - name: key
+        - name: public_key
           in: path
           required: true
           schema:
@@ -1218,13 +1218,13 @@ paths:
         "404":
           description: Image not found
 
-  /image/{key}/{id}/x/{size}:
+  /image/{public_key}/{id}/x/{size}:
     get:
       tags: [images-secure]
       summary: View image at explicit size (secure mode)
       operationId: viewImageAtSizeSecure
       parameters:
-        - name: key
+        - name: public_key
           in: path
           required: true
           schema:
@@ -1273,13 +1273,13 @@ paths:
                 type: string
                 format: binary
 
-  /image/{key}/{id}/raw:
+  /image/{public_key}/{id}/raw:
     get:
       tags: [images-secure]
       summary: View original image file (secure mode)
       operationId: viewImageRawSecure
       parameters:
-        - name: key
+        - name: public_key
           in: path
           required: true
           schema:
@@ -1304,13 +1304,13 @@ paths:
                 type: string
                 format: binary
 
-  /image/{key}/{id}/thumb:
+  /image/{public_key}/{id}/thumb:
     get:
       tags: [images-secure]
       summary: View image thumbnail (secure mode)
       operationId: viewImageThumbSecure
       parameters:
-        - name: key
+        - name: public_key
           in: path
           required: true
           schema:
@@ -1347,13 +1347,13 @@ paths:
                 type: string
                 format: binary
 
-  /image/{key}/{id}/preview/{size}:
+  /image/{public_key}/{id}/preview/{size}:
     get:
       tags: [images-secure]
       summary: Preview image at size without caching (secure mode)
       operationId: previewImageSecure
       parameters:
-        - name: key
+        - name: public_key
           in: path
           required: true
           schema:

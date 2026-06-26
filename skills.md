@@ -147,7 +147,7 @@ url=https://example.com/photo.jpg&subfolder=<optional>
 
 ### Upload success response
 
-File upload (`/upload`, `/key/:key/upload`) returns:
+File upload (`/upload`, `/key/:private_key/upload`) returns:
 ```json
 {
   "success": true,
@@ -169,7 +169,7 @@ File upload (`/upload`, `/key/:key/upload`) returns:
 }
 ```
 
-URL upload (`/upload-url`, `/key/:key/upload-url`) returns the `Image` object directly (no `success` wrapper).
+URL upload (`/upload-url`, `/key/:private_key/upload-url`) returns the `Image` object directly (no `success` wrapper).
 
 **Always check `success: true`** before using the `image` field on file uploads.
 
@@ -214,7 +214,7 @@ Use the `public_key` + image `id` together.
 | Original file | `GET /image/{public_key}/{id}/raw` |
 | Metadata only | `GET /image/{public_key}/{id}/details` |
 
-### Size resolution order for `/image/{id}` (public) and `/image/{key}/{id}` (secure)
+### Size resolution order for `/image/{id}` (public) and `/image/{public_key}/{id}` (secure)
 
 The server resolves dimensions in this priority order:
 1. Path segment `/x/{WxH}` — most explicit, use this when you know the size
@@ -241,7 +241,7 @@ Generated/resized images are saved to disk automatically on first request. Subse
 ## Workflow 4 — List images for a key
 
 ```
-GET /key/{public_key}/images
+GET /key/{private_key}/images
 ```
 
 Optional query params:
@@ -322,7 +322,7 @@ Add `?debug=1` to get a JSON description of the resize operation instead of the 
 Most endpoints are **open** (no auth required). Two endpoints require a Bearer token:
 
 - `GET /keys` — list all API keys
-- `GET /key/{public_key}/cached` — get cached key data
+- `GET /key/{private_key}/cached` — get cached key data
 
 ```
 Authorization: Bearer <token>
@@ -363,7 +363,7 @@ Common errors:
 | `POST /key/{k}/upload` | `private_key` in URL path |
 | `POST /key/{k}/upload-url` | `private_key` in URL path |
 | `DELETE /key/{k}/delete/{id}` | `private_key` in URL path |
-| `GET /key/{k}/images` | `public_key` (or private — both work via `/key/:key/view`) |
+| `GET /key/{k}/images` | `private_key` in URL path |
 | `GET /image/{k}/{id}/...` (secure mode) | `public_key` in URL path |
 
 ---

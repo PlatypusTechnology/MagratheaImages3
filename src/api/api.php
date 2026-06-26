@@ -70,9 +70,9 @@ class MagratheaImagesApi extends MagratheaApi {
 	private function AddApikey() {
 		$api = new ApikeyApi();
 		$this->Add("GET", "keys", $api, "GetAll", self::LOGGED);
-		$this->Add("GET", "key/:key/view", $api, "GetByKey", self::OPEN);
-		$this->Add("GET", "key/:key/images", $api, "ViewImages", self::OPEN, "GET: subfolder=?");
-		$this->Add("GET", "key/:public_key/cached", $api, "GetCached", self::LOGGED);
+		$this->Add("GET", "key/:private_key/view", $api, "GetByKey", self::OPEN);
+		$this->Add("GET", "key/:private_key/images", $api, "ViewImages", self::OPEN, "GET: subfolder=?");
+		$this->Add("GET", "key/:private_key/cached", $api, "GetCached", self::LOGGED);
 		$this->Add("POST", "key/create", $api, "NewKey", self::OPEN);
 	}
 
@@ -80,9 +80,9 @@ class MagratheaImagesApi extends MagratheaApi {
 		$api = new ImagesApi();
 		$this->Add("POST", "upload", $api, "Upload", self::OPEN);
 		$this->Add("POST", "upload-url", $api, "Upload", self::OPEN, "post: [private_key], [url]");
-		$this->Add("POST", "key/:key/upload", $api, "Upload", self::OPEN);
-		$this->Add("POST", "key/:key/upload-url", $api, "Upload", self::OPEN, "(private_key) post: [url]");
-		$this->Add("DELETE", "key/:key/delete/:id", $api, "Remove", self::OPEN);
+		$this->Add("POST", "key/:private_key/upload", $api, "Upload", self::OPEN);
+		$this->Add("POST", "key/:private_key/upload-url", $api, "Upload", self::OPEN, "(private_key) post: [url]");
+		$this->Add("DELETE", "key/:private_key/delete/:id", $api, "Remove", self::OPEN);
 		if(Config::Instance()->Get("secure_api")) {
 			$this->SecureImages();
 		} else {
@@ -103,12 +103,12 @@ class MagratheaImagesApi extends MagratheaApi {
 	}
 	private function SecureImages() {
 		$api = new ImagesApi();
-		$this->Add("GET", "image/:key/:id/details", $api, "ViewImageDetails", self::OPEN);
-		$this->Add("GET", "image/:key/:id", $api, "ViewImage", self::OPEN);
-		$this->Add("GET", "image/:key/:id/x/:size", $api, "ViewImage", self::OPEN);
-		$this->Add("GET", "image/:key/:id/raw", $api, "ViewRaw", self::OPEN);
-		$this->Add("GET", "image/:key/:id/thumb", $api, "ViewThumb", self::OPEN);
-		$this->Add("GET", "image/:key/:id/preview/:size", $api, "Preview", self::OPEN, "Gets the image in the given size without saving it");
+		$this->Add("GET", "image/:public_key/:id/details", $api, "ViewImageDetails", self::OPEN);
+		$this->Add("GET", "image/:public_key/:id", $api, "ViewImage", self::OPEN);
+		$this->Add("GET", "image/:public_key/:id/x/:size", $api, "ViewImage", self::OPEN);
+		$this->Add("GET", "image/:public_key/:id/raw", $api, "ViewRaw", self::OPEN);
+		$this->Add("GET", "image/:public_key/:id/thumb", $api, "ViewThumb", self::OPEN);
+		$this->Add("GET", "image/:public_key/:id/preview/:size", $api, "Preview", self::OPEN, "Gets the image in the given size without saving it");
 	}
 
 	private function Version() {

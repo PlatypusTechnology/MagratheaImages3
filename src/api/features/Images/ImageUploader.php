@@ -49,10 +49,14 @@ class ImageUploader {
 	}
 
 	public function returnSuccess($image): array {
-		return [
+		$result = [
 			"success" => true,
 			"image" => $image,
 		];
+		if($this->key) {
+			$result["public_key"] = $this->key->GetPublicKey();
+		}
+		return $result;
 	}
 	public function returnImageNotUploaded($image): array {
 		return [
