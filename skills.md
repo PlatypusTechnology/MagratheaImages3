@@ -151,28 +151,30 @@ File upload (`/upload`, `/key/:private_key/upload`) returns:
 ```json
 {
   "success": true,
-  "image": {
-    "id": 42,
-    "name": "my_photo",
-    "filename": "42_my_photo.jpg",
-    "extension": "jpg",
-    "folder": "myblog",
-    "subfolder": null,
-    "width": 1920,
-    "height": 1080,
-    "file_type": "image/jpeg",
-    "size": 204800,
-    "upload_key": "7",
-    "created_at": "2025-06-01T12:00:00",
-    "updated_at": "2025-06-01T12:00:00"
-  },
-  "public_key": "abc123def456"
+  "data": {
+    "image": {
+      "id": 42,
+      "name": "my_photo",
+      "filename": "42_my_photo.jpg",
+      "extension": "jpg",
+      "folder": "myblog",
+      "subfolder": null,
+      "width": 1920,
+      "height": 1080,
+      "file_type": "image/jpeg",
+      "size": 204800,
+      "upload_key": "7",
+      "created_at": "2025-06-01T12:00:00",
+      "updated_at": "2025-06-01T12:00:00"
+    },
+    "public_key": "abc123def456"
+  }
 }
 ```
 
 URL upload (`/upload-url`, `/key/:private_key/upload-url`) returns the `Image` object directly (no `success` wrapper).
 
-**Always check `success: true`** before using the `image` field on file uploads.
+**Always check `success: true`** before using `data.image` on file uploads.
 
 ### Upload failure response
 
