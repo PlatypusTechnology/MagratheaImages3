@@ -106,7 +106,7 @@ class ResampleCalculator {
 		$this->AddDebug("resize ratio ".$this->resizeRatio);
 		if($this->resizeRatio != $this->src_aspect["ratio"]) {
 			$this->resize_height = $this->final_image_height;
-			$this->resize_width = $this->original_image_width * $this->resizeRatio;
+			$this->resize_width = intval(round($this->original_image_width * $this->resizeRatio));
 			if(
 				$this->resize_width != $this->original_image_width &&
 				$this->resize_height != $this->original_image_height

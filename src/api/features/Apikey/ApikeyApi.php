@@ -19,7 +19,7 @@ class ApikeyApi extends MagratheaApiControl {
 	}
 
 	private function _GetKey($params): Apikey {
-		$val = $params["key"];
+		$val = $params["private_key"];
 		if(empty($val)) {
 			throw new MagratheaApiException("key is empty", true, 404, $val);
 		}
@@ -56,7 +56,7 @@ class ApikeyApi extends MagratheaApiControl {
 	}
 
 	public function GetCached($params) {
-		$key = $params["public_key"];
+		$key = $params["private_key"];
 		return $this->service->GetCached($key);
 
 	}

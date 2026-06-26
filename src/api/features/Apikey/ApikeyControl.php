@@ -73,6 +73,7 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 	public static function GetCachedFolder(string $public_key): string {
 		self::loadCache();
 		$key = GetCachedApiKey($public_key);
+		if(empty($key)) return "";
 		return $key["folder"];
 	}
 

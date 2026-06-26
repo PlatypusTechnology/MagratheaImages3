@@ -22,7 +22,7 @@ class ImagesApi extends MagratheaApiControl {
 		$quickAccess = boolval(Config::Instance()->Get("webp_quick_access"));
 		if(!$quickAccess) return false;
 		$id = $params["id"];
-		$key = $params["key"];
+		$key = $params["public_key"];
 		$imageName = $id."_".$size;
 		if(@$_GET["stretch"] == '1') $imageName .= "-s";
 		if(@$_GET["placeholder"] == '1') $imageName .= "_placeholder";
@@ -35,10 +35,11 @@ class ImagesApi extends MagratheaApiControl {
 			$img = new Images($id);
 			if(empty($img->name)) throw new MagratheaApiException("Image not found", true, 404, $params);
 			if($this->isSecure) {
-				$key = @$params["key"];
+				$key = @$params["public_key"];
 				if(empty($key)) throw new MagratheaApiException("Key is invalid");
 				$keyControl = new ApikeyControl();
 				$imgKey = $keyControl->GetCached($key);
+				if(empty($imgKey)) throw new MagratheaApiException("Key not found", true, 404);
 				if($imgKey["id"] != $img->upload_key) throw new MagratheaApiException("Key-Image relation invalid");
 			}
 			return $img;
@@ -140,10 +141,10 @@ class ImagesApi extends MagratheaApiControl {
 
 	public function Upload($params) {
 		$post = $this->GetPost();
-		if(@$params["key"]) {
-			$keyVal = $params["key"];
+		if(@$params["private_key"]) {
+			$keyVal = $params["private_key"];
 		}	else {
-			$keyVal = @$post["key"];
+			$keyVal = @$post["private_key"];
 		}
 		if(!$keyVal) {
 			throw new MagratheaApiException("Invalid Key [".$keyVal."] ", 400);
@@ -230,7 +231,7 @@ class ImagesApi extends MagratheaApiControl {
 
 	public function Remove($params) {
 		try {
-			$key = @$params["key"];
+			$key = @$params["private_key"];
 			$id = @$params["id"];
 			if(!$key || !$id) {
 				throw new MagratheaApiException("empty data");
