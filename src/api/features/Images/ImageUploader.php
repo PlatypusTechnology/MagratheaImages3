@@ -48,16 +48,20 @@ class ImageUploader {
 		return $image;
 	}
 
-	public function returnSuccess($image): array {
+	public function getImageReturn($image): array {
 		$rsData = [
 			"image" => $image,
 		];
 		if($this->key) {
 			$rsData["public_key"] = $this->key->GetPublicKey();
 		}
+		return $rsData;
+	}
+
+	public function returnSuccess($image): array {
 		$result = [
 			"success" => true,
-			"data" => $rsData,
+			"data" => $this->getImageReturn($image),
 		];
 		return $result;
 	}
@@ -131,7 +135,7 @@ class ImageUploader {
 			} else {
 				return $this->returnImageNotUploaded($image);
 			}
-			return $this->returnSuccess($image);
+			return $this->getImageReturn($image);
 		} catch(MagratheaApiException $ex) {
 			throw $ex;
 		} catch(\Exception $e) {
