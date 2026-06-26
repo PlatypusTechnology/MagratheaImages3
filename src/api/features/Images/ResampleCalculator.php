@@ -50,7 +50,7 @@ class ResampleCalculator {
 		$this->dst_height = $this->final_image_height;
 	}
 
-	public function BuildAspectRatio($w, $h): array {
+	public function BuildAspectRatio(int $w, int $h): array {
 		$aspectRatio = $w / $h;
 		$format = ($aspectRatio == 1 ? "square" : (
 			$aspectRatio > 1 ? "landscape" : "portrait"
@@ -95,7 +95,7 @@ class ResampleCalculator {
 
 		$this->dst_width = $this->final_image_width;
 		$this->dst_height = $this->final_image_height;
-		$this->src_height = $this->final_image_height / $this->resizeRatio;
+		$this->src_height = (int)round($this->final_image_height / $this->resizeRatio);
 		return $this->returnData();
 	}
 	public function CutVertical(): array {
@@ -120,8 +120,7 @@ class ResampleCalculator {
 		}
 
 		// reposition initial point:
-		$middle = $width / 2;
-		$this->src_x = $middle-($this->final_image_width/2);
+		$this->src_x = (int)round(($width - $this->final_image_width) / 2);
 		$this->dst_width = $this->final_image_width;
 		$this->dst_height = $this->final_image_height;
 		return $this->returnData();

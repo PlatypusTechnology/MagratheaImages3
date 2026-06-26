@@ -131,7 +131,7 @@ class ImageUploader {
 			} else {
 				return $this->returnImageNotUploaded($image);
 			}
-			return $image;
+			return $this->returnSuccess($image);
 		} catch(MagratheaApiException $ex) {
 			throw $ex;
 		} catch(\Exception $e) {

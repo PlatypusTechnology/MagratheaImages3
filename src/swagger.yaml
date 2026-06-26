@@ -649,11 +649,13 @@ paths:
                   description: Optional subfolder
       responses:
         "200":
-          description: Uploaded image object
+          description: Upload result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Image"
+                oneOf:
+                  - $ref: "#/components/schemas/UploadSuccessResponse"
+                  - $ref: "#/components/schemas/UploadFailResponse"
         "400":
           description: Invalid URL or key
           content:
@@ -734,11 +736,13 @@ paths:
                   description: Optional subfolder
       responses:
         "200":
-          description: Uploaded image object
+          description: Upload result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Image"
+                oneOf:
+                  - $ref: "#/components/schemas/UploadSuccessResponse"
+                  - $ref: "#/components/schemas/UploadFailResponse"
         "400":
           description: Invalid URL or key
 

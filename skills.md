@@ -172,9 +172,9 @@ File upload (`/upload`, `/key/:private_key/upload`) returns:
 }
 ```
 
-URL upload (`/upload-url`, `/key/:private_key/upload-url`) returns the `Image` object directly (no `success` wrapper).
+All upload endpoints — file and URL — return the same `UploadSuccessResponse` wrapper above.
 
-**Always check `success: true`** before using `data.image` on file uploads.
+**Always check `success: true`** before using `data.image`.
 
 ### Upload failure response
 
