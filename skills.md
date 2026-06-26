@@ -165,7 +165,8 @@ File upload (`/upload`, `/key/:private_key/upload`) returns:
     "upload_key": "7",
     "created_at": "2025-06-01T12:00:00",
     "updated_at": "2025-06-01T12:00:00"
-  }
+  },
+  "public_key": "abc123def456"
 }
 ```
 

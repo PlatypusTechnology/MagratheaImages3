@@ -200,6 +200,10 @@ components:
           example: true
         image:
           $ref: "#/components/schemas/Image"
+        public_key:
+          type: string
+          description: Public key of the Apikey used for this upload, safe to embed in image URLs
+          example: "abc123def456"
 
     UploadFailResponse:
       type: object
