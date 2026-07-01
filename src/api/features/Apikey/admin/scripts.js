@@ -28,6 +28,41 @@ function createKey(el) {
 		.then(listKeys);
 }
 
+function viewKey(id) {
+	callFeature("AdminApikey", "ViewKey", "GET", { id })
+		.then(rs => {
+			showOn("#container-keys-rs", rs);
+			return callFeature("AdminMedia", "Home", "GET", { apikey: id });
+		})
+		.then(rs => showOn("#key-media-" + id, rs));
+}
+
+function confirmDeleteKey(id) {
+	callFeature("AdminApikey", "ConfirmDeleteApikey", "GET", { id })
+		.then(rs => showOn("#key-delete-confirm-" + id, rs));
+}
+
+function deleteKey(id) {
+	let input = $("#delete-challenge-" + id);
+	if(input.val() !== "DELETE") {
+		showToast("Type DELETE to confirm", "Error", true);
+		return;
+	}
+	callFeature("AdminApikey", "DeleteApikey", "POST", { id })
+		.then((rs) => {
+			rs = JSON.parse(rs);
+			if(!rs.success) {
+				showToast(rs.error, "Error", true);
+				return;
+			}
+			showToast("Api key #" + id + " deleted", "Deleted", false);
+			let warnings = rs.data?.warnings || [];
+			warnings.forEach(w => showToast(w, "Warning", true));
+			$("#container-keys-rs").empty();
+			listKeys();
+		});
+}
+
 function cache() {
 	callFeature("AdminApikey", "Cache")
 		.then(rs => showOn("#container-keys-rs", rs));

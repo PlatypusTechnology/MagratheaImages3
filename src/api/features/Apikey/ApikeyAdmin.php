@@ -7,6 +7,7 @@ use Magrathea2\Admin\AdminElements;
 use Magrathea2\Admin\AdminFeature;
 use Magrathea2\Admin\AdminManager;
 use Magrathea2\Admin\iAdminFeature;
+use MagratheaImages3\Images\PathManager;
 
 class ApikeyAdmin extends AdminFeature implements iAdminFeature { 
 
@@ -68,6 +69,38 @@ class ApikeyAdmin extends AdminFeature implements iAdminFeature {
 			"success" => true,
 			"data" => $k,
 			"type" => ($id ? "update" : "insert")
+		]);
+	}
+
+	public function ViewKey() {
+		$id = $_GET["id"];
+		$apikey = new Apikey($id);
+		include("admin/view-key.php");
+	}
+
+	public function ConfirmDeleteApikey() {
+		$id = $_GET["id"];
+		$apikey = new Apikey($id);
+		$images = $apikey->GetImages();
+		$baseFolder = PathManager::GetMediaFolder($apikey->folder);
+		include("admin/delete-confirm.php");
+	}
+
+	public function DeleteApikey() {
+		$id = $_POST["id"];
+		$control = new ApikeyControl();
+		try {
+			$rs = $control->DeleteKey($id);
+		} catch(Exception $ex) {
+			echo json_encode([
+				"success" => false,
+				"error" => $ex->getMessage(),
+			]);
+			die;
+		}
+		echo json_encode([
+			"success" => true,
+			"data" => $rs,
 		]);
 	}
 
