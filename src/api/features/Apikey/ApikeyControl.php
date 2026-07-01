@@ -7,6 +7,7 @@ use Magrathea2\DB\Query;
 use Magrathea2\Errors\ErrorManager;
 use Magrathea2\Exceptions\MagratheaException;
 use Magrathea2\Exceptions\MagratheaModelException;
+use MagratheaImages3\Images\ImagesControl;
 use MagratheaImages3\Images\PathManager;
 
 class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
@@ -127,6 +128,69 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 		$rs = PathManager::CheckDestinationFolder($dir);
 		if($rs["success"]) return ["success" => true];
 		return $rs;
+	}
+
+	public function DeleteKey($id): array {
+		$apikey = new Apikey($id);
+		if(empty($apikey->id)) {
+			throw new MagratheaException("Api key not found");
+		}
+		$imageControl = new ImagesControl();
+		$images = $apikey->GetImages();
+		$deletedImages = [];
+		$warnings = [];
+		foreach($images as $image) {
+			try {
+				$deletedImages[] = $imageControl->RemoveImage($image);
+			} catch(Exception $ex) {
+				$warnings[] = "image #".$image->id.": ".$ex->getMessage();
+			}
+		}
+		$folder = PathManager::GetMediaFolder($apikey->folder);
+		$folderDeleted = $this->RemoveDir($folder, $warnings);
+		$deletedKey = $apikey->Delete();
+		$cacheGen = new CacheClassCreator();
+		$cacheGen->Generate();
+		return [
+			"apikey" => $deletedKey,
+			"images_deleted" => count($deletedImages),
+			"folder" => $folder,
+			"folder_deleted" => $folderDeleted,
+			"warnings" => $warnings,
+		];
+	}
+
+	public function RemoveDir($dir, array &$warnings=[]): bool {
+		if(!is_dir($dir)) {
+			$warnings[] = "folder does not exist: ".$dir;
+			return true;
+		}
+		$items = scandir($dir);
+		foreach($items as $item) {
+			if($item == "." || $item == "..") continue;
+			$path = $dir.$item;
+			if(is_dir($path)) {
+				$this->RemoveDir($path."/", $warnings);
+			} else {
+				try {
+					if(!unlink($path)) {
+						$warnings[] = "could not delete file: ".$path;
+					}
+				} catch(Exception $ex) {
+					$warnings[] = "could not delete file ".$path.": ".$ex->getMessage();
+				}
+			}
+		}
+		try {
+			if(!rmdir($dir)) {
+				$warnings[] = "could not remove folder: ".$dir;
+				return false;
+			}
+		} catch(Exception $ex) {
+			$warnings[] = "could not remove folder ".$dir.": ".$ex->getMessage();
+			return false;
+		}
+		return true;
 	}
 
 }

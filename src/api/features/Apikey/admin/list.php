@@ -47,8 +47,10 @@ $elements = AdminElements::Instance();
 			"key" => "uses"
 		],
 		[
-			"title" => "Limit",
-			"key" => "usage_limit"
+			"title" => "...",
+			"key" => function($i) {
+				return "<a onclick='viewKey(".$i->id.");' class='action'>view</a>";
+			}
 		],
 	]);
 	?>
