@@ -87,6 +87,7 @@ class ImageUploader {
 				$image->width = $width;
 				$image->height = $height;
 				$image->Insert();
+				$this->key->IncrementUses();
 			} else {
 				return $this->returnImageNotUploaded($image);
 			}
@@ -132,6 +133,7 @@ class ImageUploader {
 				$image->file_type = $mime;
 				$image->size = filesize($finalName);
 				$image->Insert();
+				$this->key->IncrementUses();
 			} else {
 				return $this->returnImageNotUploaded($image);
 			}

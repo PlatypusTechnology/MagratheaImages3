@@ -37,4 +37,10 @@ class Apikey extends \MagratheaImages3\Apikey\Base\ApikeyBase {
 		return PathManager::GetMediaFolder($this->folder);
 	}
 
+	public function IncrementUses(): Apikey {
+		$this->uses = ($this->uses ?? 0) + 1;
+		$this->Update();
+		return $this;
+	}
+
 }
