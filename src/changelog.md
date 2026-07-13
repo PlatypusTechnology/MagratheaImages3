@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.4.0
+2026-07-13
+- **fix:** removing double data encapsulation on upload image
+- **new:** api key deletion function on admin
+
 ## 3.3.3
 2026-06-23
 - **fix:** fixing pagination on /key/images
