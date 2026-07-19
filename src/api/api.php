@@ -44,6 +44,9 @@ class MagratheaImagesApi extends MagratheaApi {
 			$q = @$_POST["q"];
 			return Helper::Clean($q);
 		}, self::OPEN);
+		$this->Add("GET", "test-sentry", null, function($params) {
+			throw new MagratheaApiException("Test exception for Sentry", 500);
+		}, self::OPEN);
 		$this->Add("GET", "settings", null, function($params) {
 			$upload = ImageUploader::getMaximumFileUploadSize();
 			return[
