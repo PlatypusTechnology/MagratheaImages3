@@ -58,13 +58,6 @@ class ImageUploader {
 		return $rsData;
 	}
 
-	public function returnSuccess($image): array {
-		$result = [
-			"success" => true,
-			"data" => $this->getImageReturn($image),
-		];
-		return $result;
-	}
 	public function returnImageNotUploaded($image): array {
 		return [
 			"success" => false,
@@ -91,7 +84,7 @@ class ImageUploader {
 			} else {
 				return $this->returnImageNotUploaded($image);
 			}
-			return $this->returnSuccess($image);
+			return $this->getImageReturn($image);
 		} catch(MagratheaApiException $ex) {
 			return [
 				"success" => false,
