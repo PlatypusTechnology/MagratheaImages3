@@ -111,6 +111,28 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("GET", "image/:public_key/:id/preview/:size", $api, "Preview", self::OPEN, "Gets the image in the given size without saving it");
 	}
 
+	public function ReturnApiException($exception) {
+		$exCode = $exception->getCode();
+		if($exCode >= 100 && $exCode <= 599) {
+			$httpStatus = $exCode;
+		} else if($exCode >= 1000 && $exCode <= 9999) {
+			$httpStatus = intval($exCode / 10);
+		} else {
+			$httpStatus = 500;
+		}
+		if($httpStatus >= 500 && function_exists("Sentry\\captureException")) {
+			\Sentry\captureException($exception);
+		}
+		return parent::ReturnApiException($exception);
+	}
+
+	public function ReturnError($code = 500, $message = "", $data = null, $status = 200) {
+		if($code >= 500 && function_exists("Sentry\\captureMessage")) {
+			\Sentry\captureMessage($message ?: "Unknown API error (code {$code})", \Sentry\Severity::error());
+		}
+		return parent::ReturnError($code, $message, $data, $status);
+	}
+
 	private function Version() {
 		$this->Add("GET", "version", null, function($params) {
 			$configRoot = MagratheaPHP::Instance()->getConfigRoot();

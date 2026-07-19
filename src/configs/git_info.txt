@@ -1,8 +1,8 @@
-commit 209ad10f8b4607e3e928f65f343770b473a009a0
-Merge: e4dd688 80dff05
+commit 35bc840dc7c324f029d32c8461d527cfa2fe4e4e
+Merge: 7055f2a 62f9a26
 Author: Paulo Henrique Martins <paulovelho@paulovelho.com>
-Date:   Sun Apr 12 20:10:35 2026 -0600
+Date:   Wed Jul 8 16:28:05 2026 -0300
 
-    Merge pull request #4 from PlatypusTechnology/fix/dont-block-extensions
+    Merge pull request #5 from PlatypusTechnology/feature/api-key-delete
     
-    claude vibe coding swagger api, docker scripts, and not blocking exte…
+    delete apikey functionality

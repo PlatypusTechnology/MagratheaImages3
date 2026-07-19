@@ -23,6 +23,9 @@ try {
 //		->StartDB()
 		->Load();
 } catch(Exception $ex) {
+	if(function_exists("Sentry\\captureException")) {
+		\Sentry\captureException($ex);
+	}
 	\Magrathea2\p_r($ex);
 }
 
