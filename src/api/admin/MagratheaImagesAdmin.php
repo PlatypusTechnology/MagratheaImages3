@@ -9,6 +9,7 @@ use Magrathea2\Admin\AdminMenu;
 use Magrathea2\Admin\Features\UserLogs\AdminFeatureUserLog;
 use Magrathea2\Admin\Features\ApiExplorer\ApiExplorer;
 use Magrathea2\Admin\Features\AppConfig\AdminFeatureAppConfig;
+use Magrathea2\Admin\Features\OpenApi\OpenApiAdmin;
 use MagratheaImages3\Apikey\ApikeyAdmin;
 use MagratheaImages3\Images\ImagesAdmin;
 use MagratheaImages3\MediaAdmin;
@@ -51,7 +52,7 @@ class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
 		$this->features["medias"] = new MediaAdmin();
 		$this->features["gen-files"] = new GeneratedFileAdmin();
 		$this->features["images-crud"] = new ImagesAdmin();
-		$this->features["swagger"] = new SwaggerAdmin();
+		$this->features["swagger"] = new OpenApiAdmin("/swagger.php");
 	}
 
 	public function loadTest() {

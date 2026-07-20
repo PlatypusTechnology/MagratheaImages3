@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.1
+2026-07-20
+- **fix:** using Open Api admin feature instead of custom Swagger
+- **new:** health-check endpoint
+- **improvements:** using Magrathea v.2.2.1
+
 ## 3.4.0
 2026-07-13
 - **fix:** removing double data encapsulation on upload image

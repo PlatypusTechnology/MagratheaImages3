@@ -135,6 +135,22 @@ components:
           format: date-time
           example: "2025-01-01T00:00:00"
 
+    HealthCheckResponse:
+      type: object
+      properties:
+        health:
+          type: string
+          example: "ok"
+        time:
+          type: string
+          format: date-time
+          example: "2025-06-01T12:00:00"
+        database:
+          type: string
+          description: "\"ok\" or \"fail\" — whether a database connection could be opened"
+          enum: ["ok", "fail"]
+          example: "ok"
+
     VersionResponse:
       type: object
       properties:
@@ -358,6 +374,20 @@ components:
 paths:
 
   # ── System ─────────────────────────────────────────────────────────────────
+
+  /health-check:
+    get:
+      tags: [system]
+      summary: Health check
+      description: Returns basic liveness info, including a database connectivity check.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheckResponse"
 
   /version:
     get:

@@ -5,6 +5,7 @@ namespace MagratheaImages3;
 use AuthApi;
 use Magrathea2\Config;
 use Magrathea2\ConfigApp;
+use Magrathea2\DB\Database;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\MagratheaApi;
 use Magrathea2\MagratheaHelper;
@@ -36,10 +37,15 @@ class MagratheaImagesApi extends MagratheaApi {
 		]);
 		$this->DisableCache();
 		$this->SetAuth();
-		$this->Version();
 		$this->SetUrl();
 		$this->AddApikey();
 		$this->AddImages();
+		$this->GeneralApis();
+	}
+
+	private function GeneralApis() {
+		$this->Version();
+		$this->HealthCheck(true);
 		$this->Add("POST", "clean", null, function($params) {
 			$q = @$_POST["q"];
 			return Helper::Clean($q);
