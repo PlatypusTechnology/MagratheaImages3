@@ -76,9 +76,12 @@ class ImageUploader {
 			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
 			move_uploaded_file($_FILES["file"]["tmp_name"], $finalName);
 			if(file_exists($finalName)){
-				list($width, $height) = getimagesize($finalName);
-				$image->width = $width;
-				$image->height = $height;
+				$size = @getimagesize($finalName);
+				if($size === false && $image->extension != "svg") {
+					throw new MagratheaApiException("Could not read image dimensions; file may be corrupt", true, 415);
+				}
+				$image->width = $size ? $size[0] : 0;
+				$image->height = $size ? $size[1] : 0;
 				$image->Insert();
 				$this->key->IncrementUses();
 			} else {
@@ -120,10 +123,13 @@ class ImageUploader {
 			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
 			file_put_contents($finalName, $content);
 			if(file_exists($finalName)){
-				list($width, $height, $mime) = getimagesize($finalName);
-				$image->width = $width;
-				$image->height = $height;
-				$image->file_type = $mime;
+				$size = @getimagesize($finalName);
+				if($size === false && $image->extension != "svg") {
+					throw new MagratheaApiException("Could not read image dimensions; file may be corrupt", true, 415);
+				}
+				$image->width = $size ? $size[0] : 0;
+				$image->height = $size ? $size[1] : 0;
+				$image->file_type = $size ? $size["mime"] : $image->file_type;
 				$image->size = filesize($finalName);
 				$image->Insert();
 				$this->key->IncrementUses();

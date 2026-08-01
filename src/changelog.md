@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.4.2
+2026-08-01
+- **fix:** SVG uploads (unreadable by `getimagesize`) stored null width/height, crashing resizing with a fixed size (`ResampleCalculator` TypeError); now non-resizable images fall back to raw and uploads no longer persist null dimensions
+
 ## 3.4.1
 2026-07-20
 - **fix:** using Open Api admin feature instead of custom Swagger
