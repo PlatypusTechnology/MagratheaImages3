@@ -25,6 +25,7 @@ src/api/features/Apikey/cache/ApikeyCache.php
 images.caddy
 images.caddy_example
 src/api/.user.ini
+src/api/.phpunit.result.cache
 src/composer.phar
 src/.htaccess
 src/api/sentry.php

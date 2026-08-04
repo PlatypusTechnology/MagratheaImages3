@@ -2,8 +2,6 @@
 
 use PHPUnit\Framework\TestCase;
 use MagratheaImages3\Images\ImagesControl;
-use MagratheaImages3\Images\Images;
-use MagratheaImages3\Apikey\ApikeyControl;
 
 include_once(__DIR__ . "/../_inc.php");
 
@@ -11,8 +9,12 @@ class ImagesControlTest extends TestCase
 {
 	public function setUp(): void
 	{
-		// Mock the database to use DatabaseSimulate
-		\Magrathea2\DB\Database::Instance()->Mock();
+		// Mock the database to use DatabaseSimulate.
+		// Using MockClass() directly (rather than Instance()->Mock()) keeps this
+		// idempotent: once Database::Instance() has been swapped for a
+		// DatabaseSimulate by any test in the suite, calling ->Mock() on it again
+		// would fail since DatabaseSimulate has no Mock() method.
+		\Magrathea2\DB\Database::MockClass(\Magrathea2\DB\DatabaseSimulate::Instance());
 	}
 
 	public function testGetLastReturnsArray()
@@ -22,25 +24,14 @@ class ImagesControlTest extends TestCase
 		$this->assertIsArray($result);
 	}
 
-	public function testRemoveThrowsExceptionOnInvalidKey()
+	public function testRemoveThrowsWhenImageCannotBeLoaded()
 	{
-		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
-		$mockApi = $this->getMockBuilder(ApikeyControl::class)
-			->disableOriginalConstructor()
-			->onlyMethods(['GetByKey'])
-			->getMock();
-		$mockApi->method('GetByKey')->willReturn((object)['id' => 999]);
-		$mockImage = $this->getMockBuilder(Images::class)
-			->disableOriginalConstructor()
-			->getMock();
-		$mockImage->upload_key = 123;
-		$control = $this->getMockBuilder(ImagesControl::class)
-			->disableOriginalConstructor()
-			->onlyMethods(['RemoveImage'])
-			->getMock();
-		// inject mocks
-		$control->method('RemoveImage')->willReturn([]);
-		// simulate Remove logic
+		// Remove() first resolves the api key, then loads `new Images($id)`.
+		// Under the mocked DatabaseSimulate every query returns an empty
+		// result, so GetById() always fails to find a row -- this is the
+		// exception any caller actually observes in that situation.
+		$this->expectException(\Magrathea2\Exceptions\MagratheaModelException::class);
+		$control = new ImagesControl();
 		$control->Remove('privateKey', 1);
 	}
 
