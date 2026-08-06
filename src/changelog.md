@@ -5,6 +5,7 @@
 - **fix:** `ApikeyControl::createKey()` was calling `assertKeyNotInUse()` with the key and private-flag arguments swapped, so the uniqueness check never actually queried for the generated key
 - **fix:** `Helper::GetSize()` MB branch re-checked the KB value instead of the MB value, so any size ≥ 1MB always fell through to the GB branch (e.g. a 2MB file showed as "0GB")
 - **fix:** `Apikey::ValidateKey()` had an inverted expiration comparison, flagging valid keys as expired and expired keys as valid; now fixed and wired into the upload path (`ImagesApi::GetApiKeyByValue()`) so inactive, expired, or over-usage-limit keys are rejected on upload (uploads by file and by URL)
+- **fix:** `Images::FromUrl()`/`FromUploadFile()` derived the filename from the source URL/upload name with no length limit; URLs whose last path segment is a long opaque token (e.g. `lh3.googleusercontent.com` photo URLs) produced filenames past the 255-byte filesystem limit, so `file_put_contents()` silently failed and uploads returned `"image was not uploaded"`. Oversized name segments are now replaced with a deterministic `truncated-<hash>` name.
 
 ## 3.4.2
 2026-08-01

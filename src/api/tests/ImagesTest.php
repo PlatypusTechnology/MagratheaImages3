@@ -52,6 +52,34 @@ class ImagesTest extends \PHPUnit\Framework\TestCase {
 		$this->assertStringEndsWith("_noext", $img->filename);
 	}
 
+	public function testFromUrlTruncatesOverlyLongSegment(): void {
+		$img = new Images();
+		$longToken = str_repeat("a", 300);
+		$img->FromUrl("https://lh3.googleusercontent.com/a-/".$longToken."=s96-c", "png");
+		$this->assertEquals("png", $img->extension);
+		$this->assertStringStartsWith("truncated-", $img->name);
+		$this->assertLessThan(50, strlen($img->name));
+		$this->assertStringEndsWith("_".$img->name.".png", $img->filename);
+	}
+
+	public function testFromUrlTruncationIsDeterministicForSameUrl(): void {
+		$longToken = str_repeat("b", 300);
+		$url = "https://lh3.googleusercontent.com/a-/".$longToken."=s96-c";
+		$img1 = (new Images())->FromUrl($url, "png");
+		$img2 = (new Images())->FromUrl($url, "png");
+		$this->assertEquals($img1->name, $img2->name);
+	}
+
+	public function testFromUploadFileTruncatesOverlyLongName(): void {
+		$img = new Images();
+		$longName = str_repeat("c", 300).".jpg";
+		$img->FromUploadFile(["name" => $longName, "size" => 1, "type" => "image/jpeg"]);
+		$this->assertEquals("jpg", $img->extension);
+		$this->assertStringStartsWith("truncated-", $img->name);
+		$this->assertLessThan(50, strlen($img->name));
+		$this->assertStringEndsWith("_".$img->name.".jpg", $img->filename);
+	}
+
 	public function testBuildGenFileNamePrefixesWithId(): void {
 		$img = new Images();
 		$img->id = 7;
