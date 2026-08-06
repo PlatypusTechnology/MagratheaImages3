@@ -187,12 +187,21 @@ class ImagesApi extends MagratheaApiControl {
 		}
 	}
 
+	private function PostSizeExceeded(): bool {
+		$contentLength = (int) (@$_SERVER["CONTENT_LENGTH"] ?? 0);
+		return $contentLength > 0 && empty($_POST) && $contentLength > ImageUploader::getMaximumFileUploadSize();
+	}
+
 	public function UploadWithKey($key, ?string $subfolder=null) {
 		$uploader = new ImageUploader();
 		if($subfolder) $uploader->SetSubfolder($subfolder);
 		try {
 			$uploader->SetKey($key);
 			if(empty($_FILES)) {
+				if($this->PostSizeExceeded()) {
+					$limit = \MagratheaImages3\Helper::GetSize(ImageUploader::getMaximumFileUploadSize());
+					ErrorCodes::Instance()->ThrowException(4003, null, "maximum allowed size is {$limit}");
+				}
 				ErrorCodes::Instance()->ThrowException(4001, null, "file not received");
 			}
 			$uploader->SetFile($_FILES["file"]);

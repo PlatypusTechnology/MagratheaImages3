@@ -8,6 +8,7 @@ use Magrathea2\Exceptions\MagratheaException;
 use Magrathea2\MagratheaHelper;
 use Magrathea2\Logger;
 use MagratheaImages3\ErrorCodes;
+use Magrathea2\ConfigApp;
 
 class ImageUploader {
 
@@ -32,6 +33,10 @@ class ImageUploader {
 	public function SetFile(array $file): ImageUploader {
 		if(empty($file)) {
 			ErrorCodes::Instance()->ThrowException(4001, null, "empty file");
+		}
+		if(in_array(@$file["error"], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
+			$limit = \MagratheaImages3\Helper::GetSize(self::getMaximumFileUploadSize());
+			ErrorCodes::Instance()->ThrowException(4002, null, "maximum allowed size is {$limit}");
 		}
 		$this->file = $file;
 		return $this;
@@ -179,14 +184,23 @@ class ImageUploader {
 		return true;
 	}
 
-	public static function getMaximumFileUploadSize() {  
-		return min(self::convertPHPSizeToBytes(ini_get('post_max_size')), self::convertPHPSizeToBytes(ini_get('upload_max_filesize')));
-	} 
+	public static function getMaximumFileUploadSize() {
+		$phpLimit = min(self::convertPHPSizeToBytes(ini_get('post_max_size')), self::convertPHPSizeToBytes(ini_get('upload_max_filesize')));
+		$override = ConfigApp::Instance()->Get("max_upload_size");
+		if($override && self::IsValidSizeFormat($override)) {
+			$overrideBytes = self::convertPHPSizeToBytes($override);
+			if($overrideBytes > 0) return min($phpLimit, $overrideBytes);
+		}
+		return $phpLimit;
+	}
+	public static function IsValidSizeFormat($value): bool {
+		return is_string($value) && preg_match('/^\d+[KMGTP]?$/i', trim($value)) === 1;
+	}
 	public static function convertPHPSizeToBytes($sSize): int {
 		$sSuffix = strtoupper(substr($sSize, -1));
 		if (!in_array($sSuffix,array('P','T','G','M','K'))){
-			return (int)$sSize;  
-		} 
+			return (int)$sSize;
+		}
 		$iValue = substr($sSize, 0, -1);
 		switch ($sSuffix) {
 			case 'P': $iValue *= 1024;
@@ -197,5 +211,5 @@ class ImageUploader {
 			break;
 		}
 		return (int)$iValue;
-	}  
+	}
 }

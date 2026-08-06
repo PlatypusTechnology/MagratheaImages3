@@ -10,6 +10,8 @@
 - **fix:** removed `secure_api` — all image endpoints now always require the public key
 - **improvement:** API errors are now centralized through `ErrorCodes` (`error_codes.conf`), giving each error scenario its own numeric code
 - **fix:** `MagratheaApiException` throws across the API were passing arguments in the wrong order, so every error response returned HTTP 500 regardless of the intended status; fixed via the `ErrorCodes` migration
+- **new:** `validate` endpoint, checking upload size config, media/log folder permissions, and database connectivity
+- **new:** `max_upload_size` config to cap uploads below the PHP `post_max_size`/`upload_max_filesize` limits
 
 ## 3.4.3
 2026-08-04

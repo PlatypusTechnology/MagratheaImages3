@@ -4,15 +4,12 @@ namespace MagratheaImages3;
 
 use AuthApi;
 use Magrathea2\Config;
-use Magrathea2\ConfigApp;
 use Magrathea2\DB\Database;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\MagratheaApi;
-use Magrathea2\MagratheaHelper;
 use Magrathea2\MagratheaPHP;
 use MagratheaImages3\Apikey\ApikeyApi;
 use MagratheaImages3\Images\ImagesApi;
-use MagratheaImages3\Images\ImageUploader;
 
 class MagratheaImagesApi extends MagratheaApi {
 
@@ -46,24 +43,15 @@ class MagratheaImagesApi extends MagratheaApi {
 	private function GeneralApis() {
 		$this->Version();
 		$this->HealthCheck(true);
-		$this->Add("POST", "clean", null, function($params) {
-			$q = @$_POST["q"];
-			return Helper::Clean($q);
-		}, self::OPEN);
 		$this->Add("GET", "test-sentry", null, function($params) {
 			throw new MagratheaApiException("Test exception for Sentry", 500);
 		}, self::OPEN);
-		$this->Add("GET", "settings", null, function($params) {
-			$upload = ImageUploader::getMaximumFileUploadSize();
-			return[
-				"thumb_size" => ConfigApp::Instance()->Get("thumb_size"),
-				"upload_limit_bytes" => $upload,
-				"upload_limit" => MagratheaHelper::FormatSize($upload),
-				"force_uuid" => boolval(Config::Instance()->Get("force_uuid")),
-			];
-		}, self::OPEN);
-		$this->Add("GET", "changelog", new \MagratheaImages3\SystemApi(), "GetChangelog", self::OPEN);
-		$this->Add("GET", "error-codes", new \MagratheaImages3\SystemApi(), "GetErrorCodes", self::OPEN);
+		$systemApi = new \MagratheaImages3\SystemApi();
+		$this->Add("POST", "clean", $systemApi, "Clean", self::OPEN);
+		$this->Add("GET", "settings", $systemApi, "GetSettings", self::OPEN);
+		$this->Add("GET", "changelog", $systemApi, "GetChangelog", self::OPEN);
+		$this->Add("GET", "error-codes", $systemApi, "GetErrorCodes", self::OPEN);
+		$this->Add("GET", "validate", $systemApi, "Validate", self::OPEN);
 	}
 
 	private function SetAuth() {
