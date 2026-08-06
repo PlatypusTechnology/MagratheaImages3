@@ -30,3 +30,37 @@ instead of falling through to the generic "image was not uploaded" / "File not r
 messages.
 
 **Status:** Deferred — UUID implementation work takes priority. Revisit after that lands.
+
+## Every `MagratheaApiException` throw returns HTTP 500, regardless of the coded status
+
+**Where:** every `throw new MagratheaApiException(...)` call site in `src/api/` (~30, e.g.
+`ImagesApi.php`, `ApikeyApi.php`, `ImageResizer.php`, `ImageViewer.php`, `ImageUploader.php`) —
+found while verifying Phase 3 of `plan-uuid.md` (the `force_uuid=true` rejection was supposed to
+return 400 but returns 500).
+
+The vendored framework's real constructor (`platypustechnology/magratheaphp2`,
+`src/vendor/.../Exceptions/MagratheaApiException.php` — gitignored, not part of this repo's git
+history) is:
+```php
+__construct($message = "...", $code = 0, $data = null, $kill = true, ?\Exception $previous = null)
+```
+Every call site in this repo instead calls it positionally as
+`(message, boolKill, intendedHttpCode, extraData)`, e.g.:
+```php
+throw new MagratheaApiException("Image not found", true, 404, $params);
+```
+So `true` lands in `$code` (cast to `1`), the intended HTTP status (`404`) lands in the unused
+`$data` slot, and `MagratheaApi::ReturnApiException()` — which derives the response status from
+`$exception->getCode()` — always falls through to its `else` branch (500), since `1` isn't a valid
+HTTP-range code. Net effect: **every** API error response in this project currently returns
+HTTP 500, no matter what status the call site clearly intended (404, 400, 403, 415, ...). This
+predates the UUID work (confirmed pre-existing, e.g. the untouched "Image not found" line above)
+but was exposed anew by `ImagesApi::ResolveImage()`'s `force_uuid` rejection
+(`ImagesApi.php:33`), which should return 400 per `plan-uuid.md` but currently returns 500.
+
+**Proposed fix:** reorder arguments at each of the ~30 call sites in this repo to match the real
+constructor signature (`message, code, data, kill, previous`). The framework class itself lives in
+a separate vendored package and can't be fixed from this repo.
+
+**Status:** Deferred — flagged as a known issue, to be fixed deliberately (not as a side effect of
+the UUID work). Revisit as its own change.

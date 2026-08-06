@@ -7,6 +7,11 @@ use MagratheaImages3\Apikey\ApikeyControl;
 
 class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
 
+	public function GetByUuid(string $uuid): ?Images {
+		$q = Query::Select()->Obj(new Images())->Where(["uuid" => $uuid]);
+		return $this->RunRow($q);
+	}
+
 	public function GetLast(string $key, $page=0, $amount=12, ?string $subfolder = null): array {
 		$where = ["upload_key" => $key];
 		if($subfolder != null) $where["subfolder"] = $subfolder;
@@ -50,7 +55,10 @@ class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
 		$manager->SetApiKeyId($img->upload_key);
 		return [
 			"del_file" => $manager->DeleteFile("raw/".$img->filename),
-			"del_generated" => $manager->DeleteGeneratedPattern($img->id."_*"),
+			"del_generated" => [
+				"id" => $manager->DeleteGeneratedPattern($img->id."_*"),
+				"uuid" => $manager->DeleteGeneratedPattern($img->uuid."_*"),
+			],
 		];
 	}
 

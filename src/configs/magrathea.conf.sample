@@ -14,8 +14,8 @@
 	timezone = "America/Sao_Paulo"
 	app_url = "http://contacts.magrathea.localhost.com:8080"
 	jwt_key = ""
-	secure_api = true
 	webp_quick_access = true
+	force_uuid = false
 
 [production]
 	db_host = "127.0.0.1"
@@ -29,5 +29,5 @@
 	timezone = "America/Sao_Paulo"
 	app_url = "https://platypusweb.com"
 	jwt_key = ""
-	secure_api = true
 	webp_quick_access = true
+	force_uuid = false

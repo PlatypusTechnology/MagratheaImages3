@@ -15,6 +15,7 @@ try {
 			"admin",
 			"admin/GeneratedFileManager",
 			"admin/MediaManager",
+			"shared",
 		)
 		->AddFeature("Apikey", "Images")
 		// ->Debug()

@@ -9,12 +9,9 @@ use MagratheaImages3\Apikey\ApikeyControl;
 
 class ImagesApi extends MagratheaApiControl {
 
-	private bool $isSecure = false;
-
 	public function __construct() {
 		$this->model = get_class(new Images());
 		$this->service = new ImagesControl();
-		$this->isSecure = boolval(Config::Instance()->Get("secure_api"));
 	}
 
 	public function LookForImage($params, $size) {
@@ -29,19 +26,28 @@ class ImagesApi extends MagratheaApiControl {
 		ImageViewer::ViewQuickAccess($key, $imageName.".webp");
 	}
 
+	private function ResolveImage($idOrUuid): ?Images {
+		$forceUuid = boolval(Config::Instance()->Get("force_uuid"));
+		$looksLikeUuid = (bool) preg_match('/^[0-9a-f-]{36}$/i', $idOrUuid);
+		if ($forceUuid && !$looksLikeUuid) {
+			throw new MagratheaApiException("Images must be requested by UUID", true, 400);
+		}
+		$image = $looksLikeUuid ? $this->service->GetByUuid($idOrUuid) : new Images($idOrUuid);
+		if ($image) $image->accessId = $looksLikeUuid ? $image->uuid : (string) $image->id;
+		return $image;
+	}
+
 	public function GetById($params) {
 		try {
 			$id = $params["id"];
-			$img = new Images($id);
-			if(empty($img->name)) throw new MagratheaApiException("Image not found", true, 404, $params);
-			if($this->isSecure) {
-				$key = @$params["public_key"];
-				if(empty($key)) throw new MagratheaApiException("Key is invalid");
-				$keyControl = new ApikeyControl();
-				$imgKey = $keyControl->GetCached($key);
-				if(empty($imgKey)) throw new MagratheaApiException("Key not found", true, 404);
-				if($imgKey["id"] != $img->upload_key) throw new MagratheaApiException("Key-Image relation invalid");
-			}
+			$img = $this->ResolveImage($id);
+			if(empty($img) || empty($img->name)) throw new MagratheaApiException("Image not found", true, 404, $params);
+			$key = @$params["public_key"];
+			if(empty($key)) throw new MagratheaApiException("Key is invalid");
+			$keyControl = new ApikeyControl();
+			$imgKey = $keyControl->GetCached($key);
+			if(empty($imgKey)) throw new MagratheaApiException("Key not found", true, 404);
+			if($imgKey["id"] != $img->upload_key) throw new MagratheaApiException("Key-Image relation invalid");
 			return $img;
 		} catch(\Exception $e) {
 			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);

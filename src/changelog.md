@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.5.0
+2026-08-06
+- **new:** images now have a UUID (`uuid` column, backfilled for existing rows); every image-viewing endpoint accepts either the numeric id or the UUID in the `:id` path segment
+- **new:** `force_uuid` config flag to require UUID-only access (id-based requests get a 400)
+- **new:** `changelog` endpoint, returning the 5 most recent parsed versions from `changelog.md`
+- **improvement:** `private_key`/`public_key` sizes are now configurable via `private_key_size`/`public_key_size`
+- **fix:** removed `secure_api` — all image endpoints now always require the public key
+
 ## 3.4.3
 2026-08-04
 - **fix:** `ApikeyControl::createKey()` was calling `assertKeyNotInUse()` with the key and private-flag arguments swapped, so the uniqueness check never actually queried for the generated key

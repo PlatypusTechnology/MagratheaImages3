@@ -2,6 +2,7 @@
 namespace MagratheaImages3\Apikey;
 
 use Exception;
+use Magrathea2\ConfigApp;
 use Magrathea2\DB\Database;
 use Magrathea2\DB\Query;
 use Magrathea2\Errors\ErrorManager;
@@ -22,7 +23,9 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 	}
 
 	public function createKey(bool $private, int $tries=0): string {
-		$length = $private ? 25 : 12;
+		$length = $private
+			? ConfigApp::Instance()->GetInt("private_key_size", 25)
+			: ConfigApp::Instance()->GetInt("public_key_size", 12);
 		$key = $this->createRandomStr($length);
 		if(!$this->assertKeyNotInUse($key, $private)) {
 			$tries = $tries + 1;

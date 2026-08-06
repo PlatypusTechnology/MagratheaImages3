@@ -57,11 +57,11 @@ class MagratheaImagesApi extends MagratheaApi {
 			$upload = ImageUploader::getMaximumFileUploadSize();
 			return[
 				"thumb_size" => ConfigApp::Instance()->Get("thumb_size"),
-				"secure" => Config::Instance()->Get("secure_api"),
 				"upload_limit_bytes" => $upload,
 				"upload_limit" => MagratheaHelper::FormatSize($upload),
 			];
 		}, self::OPEN);
+		$this->Add("GET", "changelog", new \MagratheaImages3\SystemApi(), "GetChangelog", self::OPEN);
 	}
 
 	private function SetAuth() {
@@ -92,24 +92,10 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("POST", "key/:private_key/upload", $api, "Upload", self::OPEN);
 		$this->Add("POST", "key/:private_key/upload-url", $api, "Upload", self::OPEN, "(private_key) post: [url]");
 		$this->Add("DELETE", "key/:private_key/delete/:id", $api, "Remove", self::OPEN);
-		if(Config::Instance()->Get("secure_api")) {
-			$this->SecureImages();
-		} else {
-			$this->PublicImages();
-		}
+		$this->SecureImages();
 	}
 
 	// gets: generate, placeholder, stretch
-	private function PublicImages() {
-		$api = new ImagesApi();
-		$this->Add("GET", "image/:id/details", $api, "ViewImageDetails", self::OPEN);
-		$this->Add("GET", "image/:id", $api, "ViewImage", self::OPEN);
-		$this->Add("GET", "image/:id/x/:size", $api, "ViewImage", self::OPEN);
-		$this->Add("GET", "image/:id/raw", $api, "ViewRaw", self::OPEN);
-		$this->Add("GET", "image/:id/thumb", $api, "ViewThumb", self::OPEN);
-		$this->Add("GET", "image/:id/preview/:size", $api, "Preview", self::OPEN, "Gets the image in the given size without saving it");
-		$this->Add("GET", "image/:id/debug/:size", $api, "DebugResize", self::OPEN);
-	}
 	private function SecureImages() {
 		$api = new ImagesApi();
 		$this->Add("GET", "image/:public_key/:id/details", $api, "ViewImageDetails", self::OPEN);
@@ -149,7 +135,6 @@ class MagratheaImagesApi extends MagratheaApi {
 			return [
 				"api" => "Magrathea Images 3",
 				"version" => MagratheaPHP::Instance()->AppVersion(),
-				"secure" => Config::Instance()->Get("secure_api"),
 				"environment" => Config::Instance()->GetEnvironment(),
 				...$version,
 				"magrathea_version" => MagratheaPHP::Instance()->Version(),
