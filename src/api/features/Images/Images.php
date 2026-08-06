@@ -5,6 +5,10 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 
 	public bool $placeholder = false;
 
+	// Leaves headroom under the 255-byte filesystem limit and the `name`/`filename`
+	// varchar(255) columns once the "{id}_" prefix is added.
+	const MAX_FILE_SEGMENT_LENGTH = 200;
+
 	public function SetPlaceholder(): Images {
 		$this->placeholder = true;
 		return $this;
@@ -14,13 +18,22 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 		return ($this->extension != "svg");
 	}
 
+	private static function TruncatedName(string $source): string {
+		return "truncated-".substr(sha1($source), 0, 16);
+	}
+
 	public function FromUploadFile(array $file): Images {
 		$imageName = str_replace(" ", "_", $file["name"]);
 		$imageNameArr = explode(".", $imageName);
-	
+
 		$this->extension = array_pop($imageNameArr);
 		$this->name = implode(" ", $imageNameArr);
-		$this->SetFilename($imageName);
+		$safeFile = $imageName;
+		if(strlen($imageName) > self::MAX_FILE_SEGMENT_LENGTH) {
+			$this->name = self::TruncatedName($imageName);
+			$safeFile = $this->extension ? $this->name.".".$this->extension : $this->name;
+		}
+		$this->SetFilename($safeFile);
 		$this->size = $file["size"];
 		$this->file_type = $file["type"];
 		return $this;
@@ -38,6 +51,10 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 			if($detectedExt) $file .= '.'.$detectedExt;
 		}
 		$this->name = implode(" ", $pieces);
+		if(strlen($file) > self::MAX_FILE_SEGMENT_LENGTH) {
+			$this->name = self::TruncatedName($file);
+			$file = $this->extension ? $this->name.".".$this->extension : $this->name;
+		}
 		$this->SetFilename($file);
 		return $this;
 	}
