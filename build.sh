@@ -27,3 +27,10 @@ echo "  'commit_author' => '$author'," >> $output_file
 echo "  'commit_date' => '$date'," >> $output_file
 echo "  'commit_line' => '$oneline'" >> $output_file
 echo "];" >> $output_file
+
+swagger_file="src/swagger.yaml"
+version=$(cat src/version)
+
+echo "updating version in $swagger_file to $version"
+
+sed -i "s/^  version: \".*\"/  version: \"$version\"/" $swagger_file
