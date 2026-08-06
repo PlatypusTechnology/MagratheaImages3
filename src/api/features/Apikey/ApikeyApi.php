@@ -7,6 +7,7 @@ use Magrathea2\ConfigApp;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\Apikey;
+use MagratheaImages3\ErrorCodes;
 use MagratheaImages3\Images\ImagesControl;
 
 use function Magrathea2\now;
@@ -21,11 +22,11 @@ class ApikeyApi extends MagratheaApiControl {
 	private function _GetKey($params): Apikey {
 		$val = $params["private_key"];
 		if(empty($val)) {
-			throw new MagratheaApiException("key is empty", true, 404, $val);
+			ErrorCodes::Instance()->ThrowException(4005);
 		}
 		$key = $this->service->GetByKey($val);
 		if(empty($key)) {
-			throw new MagratheaApiException("key [".$val."] does not exists", true, 404, $val);
+			ErrorCodes::Instance()->ThrowException(4042, null, $val);
 		}
 		return $key;
 	}
@@ -64,12 +65,14 @@ class ApikeyApi extends MagratheaApiControl {
 	// {"secret":<< api-secret >>, "folder":<< folder-name >>}
 	public function NewKey($params) {
 		$secret = ConfigApp::Instance()->Get("secret");
-		if(!$secret) throw new MagratheaApiException("Magrathea Images setup not complete");
-		if(@$_POST["secret"] != $secret) throw new MagratheaApiException("invalid secret for key creation");
+		if(!$secret) ErrorCodes::Instance()->ThrowException(5002, null, "Magrathea Images setup not complete");
+		if(@$_POST["secret"] != $secret) ErrorCodes::Instance()->ThrowException(4011);
 		try {
 			$k = $this->service->Create($_POST);
+		} catch(MagratheaApiException $ex) {
+			throw $ex;
 		} catch(Exception $ex) {
-			throw new MagratheaApiException($ex->getMessage(), 500);
+			ErrorCodes::Instance()->ThrowException(5001, null, $ex->getMessage());
 		}
 		return $k;
 	}

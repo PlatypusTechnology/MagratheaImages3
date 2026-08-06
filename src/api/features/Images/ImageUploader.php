@@ -7,6 +7,7 @@ use MagratheaImages3\Apikey\Apikey;
 use Magrathea2\Exceptions\MagratheaException;
 use Magrathea2\MagratheaHelper;
 use Magrathea2\Logger;
+use MagratheaImages3\ErrorCodes;
 
 class ImageUploader {
 
@@ -30,7 +31,7 @@ class ImageUploader {
 	}
 	public function SetFile(array $file): ImageUploader {
 		if(empty($file)) {
-			throw new MagratheaException("Empty file");
+			ErrorCodes::Instance()->ThrowException(4001, null, "empty file");
 		}
 		$this->file = $file;
 		return $this;
@@ -78,7 +79,7 @@ class ImageUploader {
 			if(file_exists($finalName)){
 				$size = @getimagesize($finalName);
 				if($size === false && $image->extension != "svg") {
-					throw new MagratheaApiException("Could not read image dimensions; file may be corrupt", true, 415);
+					ErrorCodes::Instance()->ThrowException(4153);
 				}
 				$image->width = $size ? $size[0] : 0;
 				$image->height = $size ? $size[1] : 0;
@@ -125,7 +126,7 @@ class ImageUploader {
 			if(file_exists($finalName)){
 				$size = @getimagesize($finalName);
 				if($size === false && $image->extension != "svg") {
-					throw new MagratheaApiException("Could not read image dimensions; file may be corrupt", true, 415);
+					ErrorCodes::Instance()->ThrowException(4153);
 				}
 				$image->width = $size ? $size[0] : 0;
 				$image->height = $size ? $size[1] : 0;
@@ -151,14 +152,14 @@ class ImageUploader {
 	public function ValidateDestination(string $path): bool {
 		$destinationOk = PathManager::CheckDestinationFolder($path);
 		if(!$destinationOk["success"]) {
-			throw new MagratheaApiException($destinationOk["error"], 500, $destinationOk["path"]);
+			ErrorCodes::Instance()->ThrowException(5003, $destinationOk["path"], $destinationOk["error"]);
 		}
 		return true;
 	}
 
 	public function ValidateExtension($ext): bool {
 		if(!in_array($ext, $this->extensions)) {
-			throw new MagratheaApiException("invalid image extension: [".$ext."]", 415, $ext);
+			ErrorCodes::Instance()->ThrowException(4151, null, $ext);
 		}
 		return true;
 	}
@@ -167,7 +168,7 @@ class ImageUploader {
 		$finfo = new \finfo(FILEINFO_MIME_TYPE);
 		$mime = $finfo->buffer($content);
 		if(!isset(self::$allowedMimes[$mime])) {
-			throw new MagratheaApiException("invalid image type: [".$mime."]", 415, $mime);
+			ErrorCodes::Instance()->ThrowException(4152, null, $mime);
 		}
 		return self::$allowedMimes[$mime];
 	}

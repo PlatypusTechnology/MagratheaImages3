@@ -6,6 +6,7 @@ use Magrathea2\Config;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\ApikeyControl;
+use MagratheaImages3\ErrorCodes;
 
 class ImagesApi extends MagratheaApiControl {
 
@@ -30,7 +31,7 @@ class ImagesApi extends MagratheaApiControl {
 		$forceUuid = boolval(Config::Instance()->Get("force_uuid"));
 		$looksLikeUuid = (bool) preg_match('/^[0-9a-f-]{36}$/i', $idOrUuid);
 		if ($forceUuid && !$looksLikeUuid) {
-			throw new MagratheaApiException("Images must be requested by UUID", true, 400);
+			ErrorCodes::Instance()->ThrowException(4004, null, $idOrUuid);
 		}
 		$image = $looksLikeUuid ? $this->service->GetByUuid($idOrUuid) : new Images($idOrUuid);
 		if ($image) $image->accessId = $looksLikeUuid ? $image->uuid : (string) $image->id;
@@ -41,16 +42,18 @@ class ImagesApi extends MagratheaApiControl {
 		try {
 			$id = $params["id"];
 			$img = $this->ResolveImage($id);
-			if(empty($img) || empty($img->name)) throw new MagratheaApiException("Image not found", true, 404, $params);
+			if(empty($img) || empty($img->name)) ErrorCodes::Instance()->ThrowException(4043, $params);
 			$key = @$params["public_key"];
-			if(empty($key)) throw new MagratheaApiException("Key is invalid");
+			if(empty($key)) ErrorCodes::Instance()->ThrowException(400, null, "public key is missing");
 			$keyControl = new ApikeyControl();
 			$imgKey = $keyControl->GetCached($key);
-			if(empty($imgKey)) throw new MagratheaApiException("Key not found", true, 404);
-			if($imgKey["id"] != $img->upload_key) throw new MagratheaApiException("Key-Image relation invalid");
+			if(empty($imgKey)) ErrorCodes::Instance()->ThrowException(4041, $key);
+			if($imgKey["id"] != $img->upload_key) ErrorCodes::Instance()->ThrowException(4032, $params);
 			return $img;
+		} catch(MagratheaApiException $e) {
+			throw $e;
 		} catch(\Exception $e) {
-			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 	}
 
@@ -59,8 +62,10 @@ class ImagesApi extends MagratheaApiControl {
 			$image = $this->GetById($params);
 			unset($image->placeholder);
 			return $image;
+		} catch(MagratheaApiException $e) {
+			throw $e;
 		} catch(\Exception $e) {
-			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 	}
 
@@ -103,8 +108,10 @@ class ImagesApi extends MagratheaApiControl {
 			if($forceGen) $viewer->ForceGeneration();
 			$viewer->Size($dimensions["width"], $dimensions["height"], $stretch);
 			return $viewer->ViewFile();
+		} catch(MagratheaApiException $e) {
+			throw $e;
 		} catch(\Exception $e) {
-			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 	}
 
@@ -113,8 +120,10 @@ class ImagesApi extends MagratheaApiControl {
 			$image = $this->GetById($params);
 			$viewer = new ImageViewer($image);
 			return $viewer->Raw();
+		} catch(MagratheaApiException $e) {
+			throw $e;
 		} catch(\Exception $e) {
-			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 	}
 
@@ -129,23 +138,25 @@ class ImagesApi extends MagratheaApiControl {
 			if($placeholder) $viewer->Placeholder();
 			if($forceGen) $viewer->ForceGeneration();
 			$viewer->Thumb()->ViewFile();
+		} catch(MagratheaApiException $e) {
+			throw $e;
 		} catch(\Exception $e) {
-			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 	}
 
 	private function GetApiKeyByValue($key) {
 		$keyControl = new ApikeyControl();
 		if(empty($key)) {
-			throw new MagratheaApiException("Api Key cannot be empty", true, 500);
+			ErrorCodes::Instance()->ThrowException(4005);
 		}
 		$apiK = $keyControl->GetByKey($key);
 		if(empty($apiK->id)) {
-			throw new MagratheaApiException("Api Key is invalid: [".$key."]", true, 500);
+			ErrorCodes::Instance()->ThrowException(4042, null, $key);
 		}
 		$validation = $apiK->ValidateKey();
 		if(!$validation["ok"]) {
-			throw new MagratheaApiException($validation["data"], true, 403);
+			ErrorCodes::Instance()->ThrowException($validation["code"] ?? 403, null, $validation["data"]);
 		}
 		return $apiK;
 	}
@@ -158,7 +169,7 @@ class ImagesApi extends MagratheaApiControl {
 			$keyVal = @$post["private_key"];
 		}
 		if(!$keyVal) {
-			throw new MagratheaApiException("Invalid Key [".$keyVal."] ", 400);
+			ErrorCodes::Instance()->ThrowException(4005);
 		}
 		$url = @$post["url"];
 		try {
@@ -169,8 +180,10 @@ class ImagesApi extends MagratheaApiControl {
 			} else {
 				return $this->UploadWithKey($key, $subfolder);
 			}
-		} catch(\Exception $e) {
+		} catch(MagratheaApiException $e) {
 			throw $e;
+		} catch(\Exception $e) {
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 	}
 
@@ -180,25 +193,30 @@ class ImagesApi extends MagratheaApiControl {
 		try {
 			$uploader->SetKey($key);
 			if(empty($_FILES)) {
-				throw new MagratheaApiException("File not received", true, 500);
+				ErrorCodes::Instance()->ThrowException(4001, null, "file not received");
 			}
 			$uploader->SetFile($_FILES["file"]);
 			return $uploader->Upload();
-		} catch(\Exception $e) {
+		} catch(MagratheaApiException $e) {
 			throw $e;
+		} catch(\Exception $e) {
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 	}
 
 	public function UploadUrlWithKey($key, string $url, ?string $subfolder=null) {
-		if(!filter_var($url, FILTER_VALIDATE_URL))
-			throw new MagratheaApiException("not a valid url: [".$url."]");
+		if(!filter_var($url, FILTER_VALIDATE_URL)) {
+			ErrorCodes::Instance()->ThrowException(4006, null, $url);
+		}
 		$uploader = new ImageUploader();
 		if($subfolder) $uploader->SetSubfolder($subfolder);
 		try {
 			$uploader->SetKey($key);
 			return $uploader->UploadUrl($url);
-		} catch(\Exception $e) {
+		} catch(MagratheaApiException $e) {
 			throw $e;
+		} catch(\Exception $e) {
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 	}
 
@@ -235,8 +253,10 @@ class ImagesApi extends MagratheaApiControl {
 				return $viewer->GetResizerDebug();
 			}
 			$viewer->ViewGD();
+		} catch(MagratheaApiException $ex) {
+			throw $ex;
 		} catch(\Exception $ex) {
-			throw new MagratheaApiException($ex->getMessage(), true, 500);
+			ErrorCodes::Instance()->ThrowException(5001, null, $ex->getMessage());
 		}
 	}
 
@@ -245,11 +265,13 @@ class ImagesApi extends MagratheaApiControl {
 			$key = @$params["private_key"];
 			$id = @$params["id"];
 			if(!$key || !$id) {
-				throw new MagratheaApiException("empty data");
+				ErrorCodes::Instance()->ThrowException(4007);
 			}
 			return $this->service->Remove($key, $id);
+		} catch(MagratheaApiException $e) {
+			throw $e;
 		} catch(\Exception $e) {
-			throw new MagratheaApiException($e->getMessage(), true, $e->getCode(), $e);
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
 		}
 
 	}

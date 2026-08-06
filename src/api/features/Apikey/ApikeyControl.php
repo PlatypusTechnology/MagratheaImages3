@@ -6,8 +6,7 @@ use Magrathea2\ConfigApp;
 use Magrathea2\DB\Database;
 use Magrathea2\DB\Query;
 use Magrathea2\Errors\ErrorManager;
-use Magrathea2\Exceptions\MagratheaException;
-use Magrathea2\Exceptions\MagratheaModelException;
+use MagratheaImages3\ErrorCodes;
 use MagratheaImages3\Images\ImagesControl;
 use MagratheaImages3\Images\PathManager;
 
@@ -29,7 +28,7 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 		$key = $this->createRandomStr($length);
 		if(!$this->assertKeyNotInUse($key, $private)) {
 			$tries = $tries + 1;
-			if($tries > 5) throw new MagratheaModelException("incorrect key creation (after ".$tries." tries)");
+			if($tries > 5) ErrorCodes::Instance()->ThrowException(5001, null, "incorrect key creation (after ".$tries." tries)");
 			return $this->createKey($private, $tries);
 		}
 		return $key;
@@ -66,7 +65,7 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 		if(!$cache) {
 			$message = "Apikey cache not generated";
 			ErrorManager::Instance()->DisplayMesage($message);
-			throw new MagratheaException($message);
+			ErrorCodes::Instance()->ThrowException(5002, null, $message);
 		}
 
 	}
@@ -90,7 +89,7 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 		try {
 			$k->Normalize();
 			if(empty($k->folder)) {
-				throw new MagratheaException("folder cannot be empty!");
+				ErrorCodes::Instance()->ThrowException(4008);
 			}
 			$k->Insert();
 			$cacheGen = new CacheClassCreator();
@@ -136,7 +135,7 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 	public function DeleteKey($id): array {
 		$apikey = new Apikey($id);
 		if(empty($apikey->id)) {
-			throw new MagratheaException("Api key not found");
+			ErrorCodes::Instance()->ThrowException(4044, ["id" => $id]);
 		}
 		$imageControl = new ImagesControl();
 		$images = $apikey->GetImages();

@@ -9,6 +9,7 @@ use Magrathea2\Config;
 use Magrathea2\ConfigApp;
 use Magrathea2\Exceptions\MagratheaApiException;
 use Magrathea2\Exceptions\MagratheaException;
+use MagratheaImages3\ErrorCodes;
 use MagratheaImages3\Helper;
 use MagratheaImages3\Images\Images;
 
@@ -123,7 +124,7 @@ class ImageResizer {
 			$src_width, $src_height
 		);
 		if(!$createResized) {
-			throw new MagratheaApiException("Could not generate image", 500);
+			ErrorCodes::Instance()->ThrowException(5004, null, "could not generate image");
 		}
 		return $newGD;
 	}
@@ -178,12 +179,12 @@ class ImageResizer {
 		$folder = PathManager::GetGeneratedFolder($this->image->folder);
 		$isFolderOk = PathManager::CheckDestinationFolder($folder);
 		if($isFolderOk["success"]) return true;
-		else throw new MagratheaApiException($isFolderOk["error"], true, 500);
+		else ErrorCodes::Instance()->ThrowException(5003, null, $isFolderOk["error"]);
 	}
 
 	public function Save(): bool {
 		if(!$this->CheckFolder()) {
-			throw new MagratheaApiException("Could not save generated image; destination folder is invalid", true, 500, $this->newFile);
+			ErrorCodes::Instance()->ThrowException(5003, $this->newFile, "destination folder is invalid");
 		}
 		try {
 			$webp = boolval(Config::Instance()->Get("webp_quick_access"));
@@ -210,7 +211,7 @@ class ImageResizer {
 					return imagebmp($gd, $fileName);
 			}
 		} catch(Exception $ex) {
-			throw new MagratheaApiException("Error generating Image: ".$ex->getMessage(), true, 500, $ex);
+			ErrorCodes::Instance()->ThrowException(5004, null, $ex->getMessage());
 		}
 	}
 
@@ -222,14 +223,14 @@ class ImageResizer {
 			$quality = $this->placeholder ? 10: $this->quality;
 			return imagewebp($gd, $fileName, $quality);
 		} catch(Exception $ex) {
-			throw new MagratheaApiException("Error generating Image: ".$ex->getMessage(), true, 500, $ex);
+			ErrorCodes::Instance()->ThrowException(5004, null, $ex->getMessage());
 		}
 	}
 
 	public function GetRawGD(): GdImage|bool {
 		$this->PrintDebug("Getting gd for ".$this->extension." image; raw file: ".$this->rawFile);
 		if(!Helper::IsGDWorking()) {
-			throw new MagratheaApiException("GD lib is not installed", true, 500);
+			ErrorCodes::Instance()->ThrowException(5002, null, "GD lib is not installed");
 		}
 		$rawF = $this->rawFile;
 		switch($this->extension) {

@@ -5,8 +5,11 @@
 - **new:** images now have a UUID (`uuid` column, backfilled for existing rows); every image-viewing endpoint accepts either the numeric id or the UUID in the `:id` path segment
 - **new:** `force_uuid` config flag to require UUID-only access (id-based requests get a 400)
 - **new:** `changelog` endpoint, returning the 5 most recent parsed versions from `changelog.md`
+- **new:** `error-codes` endpoint, returning the full map of error codes and messages from `error_codes.conf`
 - **improvement:** `private_key`/`public_key` sizes are now configurable via `private_key_size`/`public_key_size`
 - **fix:** removed `secure_api` — all image endpoints now always require the public key
+- **improvement:** API errors are now centralized through `ErrorCodes` (`error_codes.conf`), giving each error scenario its own numeric code
+- **fix:** `MagratheaApiException` throws across the API were passing arguments in the wrong order, so every error response returned HTTP 500 regardless of the intended status; fixed via the `ErrorCodes` migration
 
 ## 3.4.3
 2026-08-04

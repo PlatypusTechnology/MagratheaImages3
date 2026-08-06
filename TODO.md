@@ -62,5 +62,13 @@ but was exposed anew by `ImagesApi::ResolveImage()`'s `force_uuid` rejection
 constructor signature (`message, code, data, kill, previous`). The framework class itself lives in
 a separate vendored package and can't be fixed from this repo.
 
-**Status:** Deferred — flagged as a known issue, to be fixed deliberately (not as a side effect of
-the UUID work). Revisit as its own change.
+**Status:** Fixed. Every `throw new MagratheaApiException(...)` call site in `src/api/features/`
+(plus a few plain `MagratheaException` throws in the same files) was replaced with
+`ErrorCodes::Instance()->ThrowException($code, $data, $detail)` (`src/api/error-manager/`),
+which always calls the constructor with the correct argument order. `error_codes.conf` now has a
+dedicated numeric code per error scenario (400/401/403/404/415/500 buckets with 4-digit
+sub-codes), so `MagratheaImagesApi::ReturnApiException()`'s `intval($code/10)` HTTP-status
+derivation now works as originally intended — `force_uuid` rejection returns 400, "not found"
+scenarios return 404, etc. `error-manager` also had to be registered in `_inc.php`'s
+`AddCodeFolder(...)` list, since the app's autoloader is a flat scan over registered folders and
+didn't know about the new directory.

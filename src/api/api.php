@@ -59,9 +59,11 @@ class MagratheaImagesApi extends MagratheaApi {
 				"thumb_size" => ConfigApp::Instance()->Get("thumb_size"),
 				"upload_limit_bytes" => $upload,
 				"upload_limit" => MagratheaHelper::FormatSize($upload),
+				"force_uuid" => boolval(Config::Instance()->Get("force_uuid")),
 			];
 		}, self::OPEN);
 		$this->Add("GET", "changelog", new \MagratheaImages3\SystemApi(), "GetChangelog", self::OPEN);
+		$this->Add("GET", "error-codes", new \MagratheaImages3\SystemApi(), "GetErrorCodes", self::OPEN);
 	}
 
 	private function SetAuth() {

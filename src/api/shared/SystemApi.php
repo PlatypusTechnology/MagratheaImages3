@@ -31,4 +31,9 @@ class SystemApi extends MagratheaApiControl {
 		return array_slice($changelog, 0, 5);
 	}
 
+	public function GetErrorCodes(): array {
+		$this->Cache("error_codes");
+		return ErrorCodes::Instance()->GetAll();
+	}
+
 }

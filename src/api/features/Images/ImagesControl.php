@@ -4,6 +4,7 @@ namespace MagratheaImages3\Images;
 use Magrathea2\DB\Query;
 use Magrathea2\Exceptions\MagratheaApiException;
 use MagratheaImages3\Apikey\ApikeyControl;
+use MagratheaImages3\ErrorCodes;
 
 class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
 
@@ -29,7 +30,7 @@ class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
 		$api = $apiControl->GetByKey($privateKey);
 		$image = new Images($id);
 		if($image->upload_key != $api->id) {
-			throw new MagratheaApiException("Key does not belong to image");
+			ErrorCodes::Instance()->ThrowException(4032, ["id" => $id]);
 		}
 		return $this->RemoveImage($image);
 	}
