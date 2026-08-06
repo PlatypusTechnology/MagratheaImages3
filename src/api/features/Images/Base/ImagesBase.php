@@ -10,7 +10,7 @@ use Magrathea2\MagratheaModel;
 
 class ImagesBase extends MagratheaModel implements iMagratheaModel {
 
-	public $id, $name, $filename, $extension, $folder, $subfolder, $width, $height, $file_type, $size, $upload_key;
+	public $id, $uuid, $name, $filename, $extension, $folder, $subfolder, $width, $height, $file_type, $size, $upload_key;
 	public $created_at, $updated_at;
 	protected $autoload = null;
 
@@ -26,6 +26,7 @@ class ImagesBase extends MagratheaModel implements iMagratheaModel {
 		$this->dbTable = "images";
 		$this->dbPk = "id";
 		$this->dbValues["id"] = "int";
+		$this->dbValues["uuid"] = "uuid";
 		$this->dbValues["name"] = "string";
 		$this->dbValues["filename"] = "string";
 		$this->dbValues["extension"] = "string";
