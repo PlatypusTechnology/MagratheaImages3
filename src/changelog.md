@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.5.0
+2026-08-04
+- **fix:** `ApikeyControl::createKey()` was calling `assertKeyNotInUse()` with the key and private-flag arguments swapped, so the uniqueness check never actually queried for the generated key
+- **fix:** `Helper::GetSize()` MB branch re-checked the KB value instead of the MB value, so any size ≥ 1MB always fell through to the GB branch (e.g. a 2MB file showed as "0GB")
+- **fix:** `Apikey::ValidateKey()` had an inverted expiration comparison, flagging valid keys as expired and expired keys as valid; now fixed and wired into the upload path (`ImagesApi::GetApiKeyByValue()`) so inactive, expired, or over-usage-limit keys are rejected on upload (uploads by file and by URL)
+
 ## 3.4.2
 2026-08-01
 - **fix:** SVG uploads (unreadable by `getimagesize`) stored null width/height, crashing resizing with a fixed size (`ResampleCalculator` TypeError); now non-resizable images fall back to raw and uploads no longer persist null dimensions

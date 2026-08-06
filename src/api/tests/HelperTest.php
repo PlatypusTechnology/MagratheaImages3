@@ -16,13 +16,10 @@ class HelperTest extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals("2.5 KB", Helper::GetSize(2560));
 	}
 
-	// NOTE: Helper::GetSize() has a latent bug — the MB branch checks
-	// `$kb < 1024` again instead of `$mb < 1024`, which is always false once the
-	// KB branch has already been skipped. So anything >= 1MB currently always
-	// falls through to the GB branch. These tests document that actual behavior.
-	public function testGetSizeOneMegabyteFallsThroughToGB(): void {
+	public function testGetSizeUnderOneGbReturnsMB(): void {
 		$oneMb = 1024 * 1024;
-		$this->assertEquals("0GB", Helper::GetSize($oneMb));
+		$this->assertEquals("1 MB", Helper::GetSize($oneMb));
+		$this->assertEquals("2.5 MB", Helper::GetSize(1024 * 1024 * 2.5));
 	}
 
 	public function testGetSizeOneGigabyteReturnsGB(): void {

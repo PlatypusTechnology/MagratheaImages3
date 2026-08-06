@@ -24,7 +24,7 @@ class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
 	public function createKey(bool $private, int $tries=0): string {
 		$length = $private ? 25 : 12;
 		$key = $this->createRandomStr($length);
-		if(!$this->assertKeyNotInUse($private, $key)) {
+		if(!$this->assertKeyNotInUse($key, $private)) {
 			$tries = $tries + 1;
 			if($tries > 5) throw new MagratheaModelException("incorrect key creation (after ".$tries." tries)");
 			return $this->createKey($private, $tries);
