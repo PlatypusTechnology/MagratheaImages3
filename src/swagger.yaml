@@ -45,6 +45,11 @@ components:
         id:
           type: integer
           example: 42
+        uuid:
+          type: string
+          format: uuid
+          description: Stable UUID identifier for this image. Accepted anywhere `:id` is accepted on viewing endpoints (not on delete). Required when `force_uuid` is enabled.
+          example: "9f8b7c6d-1234-4e56-9abc-1234567890ab"
         name:
           type: string
           example: "my_photo"
@@ -218,6 +223,38 @@ components:
               description:
                 type: string
                 example: "fixed the thing"
+
+    ValidateResponse:
+      type: object
+      description: Self-check of server configuration and environment health.
+      properties:
+        valid:
+          type: boolean
+          description: True only if every check below is "ok"
+          example: true
+        checks:
+          type: object
+          properties:
+            max_upload_size:
+              type: string
+              description: "\"ok\" if `max_upload_size` is unset or a valid size string, else \"invalid\""
+              enum: ["ok", "invalid"]
+              example: "ok"
+            medias_path:
+              type: string
+              description: "\"ok\", \"invalid\" (missing/not a directory), or \"permissions_failed\" (not writable)"
+              enum: ["ok", "invalid", "permissions_failed"]
+              example: "ok"
+            logs_path:
+              type: string
+              description: "\"ok\", \"invalid\" (missing/not a directory), or \"permissions_failed\" (not writable)"
+              enum: ["ok", "invalid", "permissions_failed"]
+              example: "ok"
+            database:
+              type: string
+              description: "\"ok\" or \"fail\" — whether a database connection could be opened"
+              enum: ["ok", "fail"]
+              example: "ok"
 
     UploadSuccessResponse:
       type: object
@@ -517,6 +554,20 @@ paths:
                 example:
                   "400": "Invalid Data"
                   "4001": "Incorrect upload data"
+
+  /validate:
+    get:
+      tags: [system]
+      summary: Validate server configuration and environment
+      description: Runs self-checks against upload size config, media/log folder permissions, and database connectivity.
+      operationId: validateEnvironment
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidateResponse"
 
   /token:
     get:
