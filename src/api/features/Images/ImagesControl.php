@@ -4,8 +4,14 @@ namespace MagratheaImages3\Images;
 use Magrathea2\DB\Query;
 use Magrathea2\Exceptions\MagratheaApiException;
 use MagratheaImages3\Apikey\ApikeyControl;
+use MagratheaImages3\ErrorCodes;
 
 class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
+
+	public function GetByUuid(string $uuid): ?Images {
+		$q = Query::Select()->Obj(new Images())->Where(["uuid" => $uuid]);
+		return $this->RunRow($q);
+	}
 
 	public function GetLast(string $key, $page=0, $amount=12, ?string $subfolder = null): array {
 		$where = ["upload_key" => $key];
@@ -24,7 +30,7 @@ class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
 		$api = $apiControl->GetByKey($privateKey);
 		$image = new Images($id);
 		if($image->upload_key != $api->id) {
-			throw new MagratheaApiException("Key does not belong to image");
+			ErrorCodes::Instance()->ThrowException(4032, ["id" => $id]);
 		}
 		return $this->RemoveImage($image);
 	}
@@ -50,7 +56,10 @@ class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
 		$manager->SetApiKeyId($img->upload_key);
 		return [
 			"del_file" => $manager->DeleteFile("raw/".$img->filename),
-			"del_generated" => $manager->DeleteGeneratedPattern($img->id."_*"),
+			"del_generated" => [
+				"id" => $manager->DeleteGeneratedPattern($img->id."_*"),
+				"uuid" => $manager->DeleteGeneratedPattern($img->uuid."_*"),
+			],
 		];
 	}
 

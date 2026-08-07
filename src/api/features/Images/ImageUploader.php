@@ -7,6 +7,8 @@ use MagratheaImages3\Apikey\Apikey;
 use Magrathea2\Exceptions\MagratheaException;
 use Magrathea2\MagratheaHelper;
 use Magrathea2\Logger;
+use MagratheaImages3\ErrorCodes;
+use Magrathea2\ConfigApp;
 
 class ImageUploader {
 
@@ -30,7 +32,11 @@ class ImageUploader {
 	}
 	public function SetFile(array $file): ImageUploader {
 		if(empty($file)) {
-			throw new MagratheaException("Empty file");
+			ErrorCodes::Instance()->ThrowException(4001, null, "empty file");
+		}
+		if(in_array(@$file["error"], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
+			$limit = \MagratheaImages3\Helper::GetSize(self::getMaximumFileUploadSize());
+			ErrorCodes::Instance()->ThrowException(4002, null, "maximum allowed size is {$limit}");
 		}
 		$this->file = $file;
 		return $this;
@@ -78,7 +84,7 @@ class ImageUploader {
 			if(file_exists($finalName)){
 				$size = @getimagesize($finalName);
 				if($size === false && $image->extension != "svg") {
-					throw new MagratheaApiException("Could not read image dimensions; file may be corrupt", true, 415);
+					ErrorCodes::Instance()->ThrowException(4153);
 				}
 				$image->width = $size ? $size[0] : 0;
 				$image->height = $size ? $size[1] : 0;
@@ -125,7 +131,7 @@ class ImageUploader {
 			if(file_exists($finalName)){
 				$size = @getimagesize($finalName);
 				if($size === false && $image->extension != "svg") {
-					throw new MagratheaApiException("Could not read image dimensions; file may be corrupt", true, 415);
+					ErrorCodes::Instance()->ThrowException(4153);
 				}
 				$image->width = $size ? $size[0] : 0;
 				$image->height = $size ? $size[1] : 0;
@@ -151,14 +157,14 @@ class ImageUploader {
 	public function ValidateDestination(string $path): bool {
 		$destinationOk = PathManager::CheckDestinationFolder($path);
 		if(!$destinationOk["success"]) {
-			throw new MagratheaApiException($destinationOk["error"], 500, $destinationOk["path"]);
+			ErrorCodes::Instance()->ThrowException(5003, $destinationOk["path"], $destinationOk["error"]);
 		}
 		return true;
 	}
 
 	public function ValidateExtension($ext): bool {
 		if(!in_array($ext, $this->extensions)) {
-			throw new MagratheaApiException("invalid image extension: [".$ext."]", 415, $ext);
+			ErrorCodes::Instance()->ThrowException(4151, null, $ext);
 		}
 		return true;
 	}
@@ -167,7 +173,7 @@ class ImageUploader {
 		$finfo = new \finfo(FILEINFO_MIME_TYPE);
 		$mime = $finfo->buffer($content);
 		if(!isset(self::$allowedMimes[$mime])) {
-			throw new MagratheaApiException("invalid image type: [".$mime."]", 415, $mime);
+			ErrorCodes::Instance()->ThrowException(4152, null, $mime);
 		}
 		return self::$allowedMimes[$mime];
 	}
@@ -178,14 +184,23 @@ class ImageUploader {
 		return true;
 	}
 
-	public static function getMaximumFileUploadSize() {  
-		return min(self::convertPHPSizeToBytes(ini_get('post_max_size')), self::convertPHPSizeToBytes(ini_get('upload_max_filesize')));
-	} 
+	public static function getMaximumFileUploadSize() {
+		$phpLimit = min(self::convertPHPSizeToBytes(ini_get('post_max_size')), self::convertPHPSizeToBytes(ini_get('upload_max_filesize')));
+		$override = ConfigApp::Instance()->Get("max_upload_size");
+		if($override && self::IsValidSizeFormat($override)) {
+			$overrideBytes = self::convertPHPSizeToBytes($override);
+			if($overrideBytes > 0) return min($phpLimit, $overrideBytes);
+		}
+		return $phpLimit;
+	}
+	public static function IsValidSizeFormat($value): bool {
+		return is_string($value) && preg_match('/^\d+[KMGTP]?$/i', trim($value)) === 1;
+	}
 	public static function convertPHPSizeToBytes($sSize): int {
 		$sSuffix = strtoupper(substr($sSize, -1));
 		if (!in_array($sSuffix,array('P','T','G','M','K'))){
-			return (int)$sSize;  
-		} 
+			return (int)$sSize;
+		}
 		$iValue = substr($sSize, 0, -1);
 		switch ($sSuffix) {
 			case 'P': $iValue *= 1024;
@@ -196,5 +211,5 @@ class ImageUploader {
 			break;
 		}
 		return (int)$iValue;
-	}  
+	}
 }

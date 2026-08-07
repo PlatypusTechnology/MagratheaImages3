@@ -5,6 +5,10 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 
 	public bool $placeholder = false;
 
+	// Set per-request by ImagesApi::ResolveImage() to whichever identifier (id or
+	// uuid) the current request actually resolved through; not a DB field.
+	public ?string $accessId = null;
+
 	// Leaves headroom under the 255-byte filesystem limit and the `name`/`filename`
 	// varchar(255) columns once the "{id}_" prefix is added.
 	const MAX_FILE_SEGMENT_LENGTH = 200;
@@ -88,7 +92,7 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 	}
 
 	public function BuildGenFileName(string $addon): string {
-		return $this->id."_".$addon;
+		return ($this->accessId ?? $this->id)."_".$addon;
 	}
 
 	public function BuildFilename(string $addon): string {

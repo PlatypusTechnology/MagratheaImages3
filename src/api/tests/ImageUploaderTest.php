@@ -12,6 +12,16 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 		(new ImageUploader())->SetFile([]);
 	}
 
+	public function testSetFileThrowsOnIniSizeError(): void {
+		$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+		(new ImageUploader())->SetFile(["name" => "a.jpg", "size" => 0, "tmp_name" => "", "error" => UPLOAD_ERR_INI_SIZE]);
+	}
+
+	public function testSetFileThrowsOnFormSizeError(): void {
+		$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+		(new ImageUploader())->SetFile(["name" => "a.jpg", "size" => 0, "tmp_name" => "", "error" => UPLOAD_ERR_FORM_SIZE]);
+	}
+
 	public function testSetFileStoresFile(): void {
 		$file = ["name" => "a.jpg", "size" => 10, "type" => "image/jpeg"];
 		$uploader = (new ImageUploader())->SetFile($file);
@@ -67,8 +77,46 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testGetMaximumFileUploadSizeReturnsInt(): void {
+		\Magrathea2\ConfigApp::Instance()->Mock([]);
 		$this->assertIsInt(ImageUploader::getMaximumFileUploadSize());
 		$this->assertGreaterThan(0, ImageUploader::getMaximumFileUploadSize());
+	}
+
+	public function testGetMaximumFileUploadSizeUsesValidOverrideWhenSmaller(): void {
+		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => "1K"]);
+		$this->assertEquals(1024, ImageUploader::getMaximumFileUploadSize());
+	}
+
+	public function testGetMaximumFileUploadSizeIgnoresOverrideLargerThanPhpLimit(): void {
+		\Magrathea2\ConfigApp::Instance()->Mock([]);
+		$phpLimit = ImageUploader::getMaximumFileUploadSize();
+		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => (string)($phpLimit + 1024)]);
+		$this->assertEquals($phpLimit, ImageUploader::getMaximumFileUploadSize());
+	}
+
+	public function testGetMaximumFileUploadSizeFallsBackToPhpLimitWhenOverrideInvalid(): void {
+		\Magrathea2\ConfigApp::Instance()->Mock([]);
+		$phpLimit = ImageUploader::getMaximumFileUploadSize();
+		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => "not-a-size"]);
+		$this->assertEquals($phpLimit, ImageUploader::getMaximumFileUploadSize());
+	}
+
+	public function testGetMaximumFileUploadSizeFallsBackToPhpLimitWhenOverrideUnset(): void {
+		\Magrathea2\ConfigApp::Instance()->Mock([]);
+		$phpLimit = ImageUploader::getMaximumFileUploadSize();
+		$this->assertEquals($phpLimit, ImageUploader::getMaximumFileUploadSize());
+	}
+
+	public function testIsValidSizeFormatAcceptsPhpIniStyleValues(): void {
+		foreach (["100", "10K", "5M", "2G", "1T", "3P", "5m", "10k"] as $value) {
+			$this->assertTrue(ImageUploader::IsValidSizeFormat($value), "expected [{$value}] to be valid");
+		}
+	}
+
+	public function testIsValidSizeFormatRejectsMalformedValues(): void {
+		foreach (["", "abc", "5MB", "-5M", "5.5M", "M5", "5 M"] as $value) {
+			$this->assertFalse(ImageUploader::IsValidSizeFormat($value), "expected [{$value}] to be invalid");
+		}
 	}
 
 	public function testCreateImageUsesKeyFolderAndId(): void {
