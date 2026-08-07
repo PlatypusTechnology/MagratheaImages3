@@ -53,16 +53,22 @@ class ApikeyControlTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testCreateKeyReturnsExpectedLengths(): void {
-		// NOTE: createKey() calls assertKeyNotInUse($private, $key) with the
-		// arguments swapped (see ApikeyControl::createKey(), line 27) --
-		// the boolean flag is passed where the key string is expected and
-		// vice-versa. In practice this means the real uniqueness check never
-		// actually queries for the generated key, it queries for the boolean.
-		// This test only pins down the lengths createKey() currently produces,
-		// not the (broken) uniqueness guarantee.
 		$control = new ApikeyControl();
 		$this->assertEquals(25, strlen($control->createKey(true)));
 		$this->assertEquals(12, strlen($control->createKey(false)));
+	}
+
+	public function testCreateKeyRetriesOnCollision(): void {
+		$control = $this->getMockBuilder(ApikeyControl::class)
+			->onlyMethods(['assertKeyNotInUse'])
+			->getMock();
+		$control->expects($this->exactly(2))
+			->method('assertKeyNotInUse')
+			->with($this->isType('string'), true)
+			->willReturnOnConsecutiveCalls(false, true);
+
+		$key = $control->createKey(true);
+		$this->assertEquals(25, strlen($key));
 	}
 
 	public function testCreateDirCreatesFolderAndReturnsSuccess(): void {

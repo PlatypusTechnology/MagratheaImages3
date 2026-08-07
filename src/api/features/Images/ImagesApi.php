@@ -137,6 +137,10 @@ class ImagesApi extends MagratheaApiControl {
 		if(empty($apiK->id)) {
 			throw new MagratheaApiException("Api Key is invalid: [".$key."]", true, 500);
 		}
+		$validation = $apiK->ValidateKey();
+		if(!$validation["ok"]) {
+			throw new MagratheaApiException($validation["data"], true, 403);
+		}
 		return $apiK;
 	}
 

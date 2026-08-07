@@ -1,8 +1,5 @@
-commit 35bc840dc7c324f029d32c8461d527cfa2fe4e4e
-Merge: 7055f2a 62f9a26
-Author: Paulo Henrique Martins <paulovelho@paulovelho.com>
-Date:   Wed Jul 8 16:28:05 2026 -0300
+commit 6995b82aab586cd715247f35574cc7e44fa30653
+Author: Paulo Martins <paulovelho@paulovelho.com>
+Date:   Thu Aug 6 13:23:19 2026 -0300
 
-    Merge pull request #5 from PlatypusTechnology/feature/api-key-delete
-    
-    delete apikey functionality
+    versioning fixes

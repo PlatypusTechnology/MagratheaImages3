@@ -25,7 +25,7 @@ class Apikey extends \MagratheaImages3\Apikey\Base\ApikeyBase {
 	public function ValidateKey(): array {
 		$error = null;
 		if($this->usage_limit > 0 && $this->uses == $this->usage_limit) $error = "usage limit reached";
-		if($this->expiration != null && $this->expiration > now()) $error = "key expired";
+		if($this->expiration != null && $this->expiration < now()) $error = "key expired";
 		if(!$this->active) $error = "key not active";
 		return [
 			"ok" => ($error == null),

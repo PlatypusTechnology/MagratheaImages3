@@ -99,30 +99,25 @@ class ApikeyTest extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue($rs["ok"]);
 	}
 
-	// NOTE: ValidateKey()'s expiration check is `$this->expiration > now()`, which
-	// flags a key as "expired" when its expiration is in the FUTURE, and treats a
-	// PAST expiration as fine. This looks backwards but is the current, real
-	// behavior — these tests pin it down so a future fix is a deliberate, visible
-	// change rather than a silent one.
-	public function testValidateKeyFlagsFutureExpirationAsExpired(): void {
+	public function testValidateKeyOkWhenExpirationIsInTheFuture(): void {
 		$k = new Apikey();
 		$k->active = true;
 		$k->usage_limit = 0;
 		$k->uses = 0;
 		$k->expiration = date("Y-m-d H:i:s", strtotime("+1 day"));
 		$rs = $k->ValidateKey();
-		$this->assertFalse($rs["ok"]);
-		$this->assertEquals("key expired", $rs["data"]);
+		$this->assertTrue($rs["ok"]);
 	}
 
-	public function testValidateKeyTreatsPastExpirationAsOk(): void {
+	public function testValidateKeyFailsWhenExpirationIsInThePast(): void {
 		$k = new Apikey();
 		$k->active = true;
 		$k->usage_limit = 0;
 		$k->uses = 0;
 		$k->expiration = date("Y-m-d H:i:s", strtotime("-1 day"));
 		$rs = $k->ValidateKey();
-		$this->assertTrue($rs["ok"]);
+		$this->assertFalse($rs["ok"]);
+		$this->assertEquals("key expired", $rs["data"]);
 	}
 
 	public function testGetDestinationFolderUsesFolderProperty(): void {
