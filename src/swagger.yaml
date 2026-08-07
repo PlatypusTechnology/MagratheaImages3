@@ -285,6 +285,15 @@ components:
           nullable: true
           description: Additional error context
 
+    ImageDetailsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/Image"
+
     ViewImagesResponse:
       type: object
       properties:
@@ -1134,7 +1143,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Image"
+                $ref: "#/components/schemas/ImageDetailsResponse"
         "400":
           description: "`force_uuid` enabled and `id` is not a UUID (code 4004)"
           content:
