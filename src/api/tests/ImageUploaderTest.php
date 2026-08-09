@@ -162,6 +162,27 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals("image-placeholder", $rs["data"]);
 	}
 
+	public function testGetExternalContentReturnsContentWithinLimit(): void {
+		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => "1M"]);
+		$tmp = tempnam(sys_get_temp_dir(), "img");
+		file_put_contents($tmp, str_repeat("a", 100));
+		$content = (new ImageUploader())->GetExternalContent("file://".$tmp);
+		unlink($tmp);
+		$this->assertEquals(str_repeat("a", 100), $content);
+	}
+
+	public function testGetExternalContentThrowsWhenContentExceedsLimit(): void {
+		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => "10"]);
+		$tmp = tempnam(sys_get_temp_dir(), "img");
+		file_put_contents($tmp, str_repeat("a", 100));
+		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
+		try {
+			(new ImageUploader())->GetExternalContent("file://".$tmp);
+		} finally {
+			unlink($tmp);
+		}
+	}
+
 	public function testGetDestinationUsesKeyFolderRawPath(): void {
 		$mediasPath = rtrim(\Magrathea2\Config::Instance()->Get("medias_path"), "/");
 		$key = new Apikey();

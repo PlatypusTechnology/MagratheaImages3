@@ -8,7 +8,7 @@ info:
 
     Upload endpoints accept either a `private_key` in the POST body or the `private_key`
     in the URL path. Deletion also requires the private key.
-  version: "3.5.0"
+  version: "3.5.1"
 
 servers:
   - url: "{baseUrl}"

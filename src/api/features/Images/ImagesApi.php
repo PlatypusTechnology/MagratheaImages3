@@ -4,6 +4,7 @@ namespace MagratheaImages3\Images;
 
 use Magrathea2\Config;
 use Magrathea2\Exceptions\MagratheaApiException;
+use Magrathea2\Exceptions\MagratheaModelException;
 use Magrathea2\MagratheaApiControl;
 use MagratheaImages3\Apikey\ApikeyControl;
 use MagratheaImages3\ErrorCodes;
@@ -33,7 +34,11 @@ class ImagesApi extends MagratheaApiControl {
 		if ($forceUuid && !$looksLikeUuid) {
 			ErrorCodes::Instance()->ThrowException(4004, null, $idOrUuid);
 		}
-		$image = $looksLikeUuid ? $this->service->GetByUuid($idOrUuid) : new Images($idOrUuid);
+		try {
+			$image = $looksLikeUuid ? $this->service->GetByUuid($idOrUuid) : new Images($idOrUuid);
+		} catch (MagratheaModelException $e) {
+			return null;
+		}
 		if ($image) $image->accessId = $looksLikeUuid ? $image->uuid : (string) $image->id;
 		return $image;
 	}

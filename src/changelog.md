@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.1
+2026-08-09
+- **fix:** uploading an image via `/key/{private_key}/upload-url` ignored `max_upload_size`, letting remote URLs bypass the size limit enforced on direct file uploads; `ImageUploader::GetExternalContent()` now streams the download and aborts once it exceeds the configured limit
+
 ## 3.5.0
 2026-08-06
 - **new:** images now have a UUID (`uuid` column, backfilled for existing rows); every image-viewing endpoint accepts either the numeric id or the UUID in the `:id` path segment

@@ -112,7 +112,25 @@ class ImageUploader {
 		$context = stream_context_create([
 			"http" => [ "header" => "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36" ]
 		]);
-		return file_get_contents($url, false, $context);
+		$handle = @fopen($url, "rb", false, $context);
+		if($handle === false) return false;
+
+		$maxSize = self::getMaximumFileUploadSize();
+		$content = "";
+		$length = 0;
+		while(!feof($handle)) {
+			$chunk = fread($handle, 8192);
+			if($chunk === false) break;
+			$length += strlen($chunk);
+			if($length > $maxSize) {
+				fclose($handle);
+				$limit = \MagratheaImages3\Helper::GetSize($maxSize);
+				ErrorCodes::Instance()->ThrowException(4002, null, "maximum allowed size is {$limit}");
+			}
+			$content .= $chunk;
+		}
+		fclose($handle);
+		return $content;
 	}
 
 	public function UploadUrl($url) {
