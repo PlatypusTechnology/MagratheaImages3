@@ -2,7 +2,7 @@
 	"name": "platypustechnology/magratheaimages",
 	"description": "Magrathea Images 3",
 	"require": {
-		"platypustechnology/magratheaphp2": "dev-master",
+		"platypustechnology/magratheaphp2": "2.3.1",
 		"sentry/sentry": "^3.22",
 		"symfony/http-client": "^6.4",
 		"nyholm/psr7": "^1.8"
