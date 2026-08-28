@@ -46,7 +46,7 @@ function previewSize(el) {
 
 function removeImage(id) {
 	if(!confirm("delete image ID# " + id + "?")) return;
-	callFeature(mediaFeatureName, "Remove", "GET", { id })
+	callFeature(mediaFeatureName, "Remove", "POST", { id })
 		.then((rs) => {
 			refreshMedias();
 			window.setTimeout(() => addTo("#media-image-viewer", rs), 1000);

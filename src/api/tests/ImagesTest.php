@@ -145,4 +145,35 @@ class ImagesTest extends \PHPUnit\Framework\TestCase {
 		$this->assertTrue($img->placeholder);
 	}
 
+	/**
+	 * The serialized shape is the public API contract (the `Image` schema in
+	 * `swagger.yaml`). This asserts the exact key set, so a new column added to the
+	 * model can never silently start appearing in API responses.
+	 */
+	public function testJsonSerializeEmitsExactlyTheDocumentedFields(): void {
+		$img = new Images();
+		$decoded = json_decode(json_encode($img), true);
+		$this->assertEquals([
+			"id", "uuid", "name", "filename", "extension", "folder", "subfolder",
+			"width", "height", "file_type", "size", "upload_key",
+			"created_at", "updated_at",
+		], array_keys($decoded));
+	}
+
+	public function testJsonSerializeHidesBackupStateAndInternalFlags(): void {
+		$img = new Images();
+		$img->backed_up_at = "2026-08-25 10:00:00";
+		$img->backup_attempts = 3;
+		$img->backup_error = "connection to bucket failed";
+		$img->backup_etag = "d41d8cd98f00b204e9800998ecf8427e";
+		$img->SetPlaceholder();
+		$img->accessId = "9f8b7c6d-1234-4e56-9abc-1234567890ab";
+
+		$json = json_encode($img);
+		foreach(["backed_up_at", "backup_attempts", "backup_error", "backup_etag",
+				"placeholder", "accessId", "Apikey", "private_key"] as $hidden) {
+			$this->assertStringNotContainsString($hidden, $json);
+		}
+	}
+
 }

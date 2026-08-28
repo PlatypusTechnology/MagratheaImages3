@@ -1,7 +1,7 @@
 <?php
 namespace MagratheaImages3\Images;
 
-class Images extends \MagratheaImages3\Images\Base\ImagesBase {
+class Images extends \MagratheaImages3\Images\Base\ImagesBase implements \JsonSerializable {
 
 	public bool $placeholder = false;
 
@@ -12,6 +12,37 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 	// Leaves headroom under the 255-byte filesystem limit and the `name`/`filename`
 	// varchar(255) columns once the "{id}_" prefix is added.
 	const MAX_FILE_SEGMENT_LENGTH = 200;
+
+	/**
+	 * The public API shape of an image, matching the `Image` schema in `swagger.yaml`.
+	 *
+	 * The API json_encode()s models directly, which would otherwise emit every public
+	 * property: the internal render flags `placeholder`/`accessId`, and the `backup_*`
+	 * columns, whose `backup_error` can carry endpoint and bucket details.
+	 *
+	 * This is deliberately an explicit list rather than `ToArray()`. `ToArray()` merges
+	 * `relations["properties"]`, which holds the lazy-loaded `Apikey` -- and `Apikey`
+	 * exposes `private_key` as a public property. An allowlist can only ever emit what
+	 * is written here.
+	 */
+	public function jsonSerialize(): mixed {
+		return [
+			"id" => $this->id,
+			"uuid" => $this->uuid,
+			"name" => $this->name,
+			"filename" => $this->filename,
+			"extension" => $this->extension,
+			"folder" => $this->folder,
+			"subfolder" => $this->subfolder,
+			"width" => $this->width,
+			"height" => $this->height,
+			"file_type" => $this->file_type,
+			"size" => $this->size,
+			"upload_key" => $this->upload_key,
+			"created_at" => $this->created_at,
+			"updated_at" => $this->updated_at,
+		];
+	}
 
 	public function SetPlaceholder(): Images {
 		$this->placeholder = true;

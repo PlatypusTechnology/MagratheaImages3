@@ -82,6 +82,7 @@ class ImageUploader {
 			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
 			move_uploaded_file($_FILES["file"]["tmp_name"], $finalName);
 			if(file_exists($finalName)){
+				MetadataStripper::Strip($finalName, $image->extension);
 				$size = @getimagesize($finalName);
 				if($size === false && $image->extension != "svg") {
 					ErrorCodes::Instance()->ThrowException(4153);
@@ -147,6 +148,7 @@ class ImageUploader {
 			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
 			file_put_contents($finalName, $content);
 			if(file_exists($finalName)){
+				MetadataStripper::Strip($finalName, $image->extension);
 				$size = @getimagesize($finalName);
 				if($size === false && $image->extension != "svg") {
 					ErrorCodes::Instance()->ThrowException(4153);

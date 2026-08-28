@@ -19,6 +19,7 @@ try {
 			"error-manager",
 		)
 		->AddFeature("Apikey", "Images")
+		->AddFeature("R2")
 		// ->Debug()
 		// ->Dev()
 //		->StartDB()
