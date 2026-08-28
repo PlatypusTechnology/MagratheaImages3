@@ -1,3 +1,7 @@
+## 3.6.1
+2026-08-28
+- **improvement:** R2 backup state moved off the `images` table into two dedicated tables — `images_backup_status` (current state, one row per image, created lazily on the first push attempt) and `images_backup_attempts` (append-only, one row per push attempt, kept indefinitely so a retry that eventually succeeds no longer erases every prior failure for that image); `backed_up_at`/`backup_attempts`/`backup_error`/`backup_etag` are dropped from `images` (`database/migrations/migration-3.6.1-image-backup-history.sql`)
+
 ## 3.6.0
 2026-08-21
 - **new:** uploaded images (via `/key/{private_key}/upload` and `/key/{private_key}/upload-url`) now have embedded metadata stripped before storage — EXIF/IPTC/XMP/comments for JPEG, tEXt/zTXt/iTXt/tIME/eXIf chunks for PNG, EXIF/XMP RIFF chunks for WEBP, comment extensions for GIF, and editor cruft (comments, `<metadata>`, Inkscape/Sodipodi namespaces) for SVG; done via structural byte/chunk editing rather than decode+re-encode, so pixel data is untouched — a JPEG's EXIF `Orientation` tag is preserved on its own when present so rotated photos still display correctly (`Images\MetadataStripper`)

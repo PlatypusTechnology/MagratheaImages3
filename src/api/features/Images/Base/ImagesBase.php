@@ -11,7 +11,6 @@ use Magrathea2\MagratheaModel;
 class ImagesBase extends MagratheaModel implements iMagratheaModel {
 
 	public $id, $uuid, $name, $filename, $extension, $folder, $subfolder, $width, $height, $file_type, $size, $upload_key;
-	public $backed_up_at, $backup_attempts, $backup_error, $backup_etag;
 	public $created_at, $updated_at;
 	protected $autoload = null;
 
@@ -38,10 +37,6 @@ class ImagesBase extends MagratheaModel implements iMagratheaModel {
 		$this->dbValues["file_type"] = "string";
 		$this->dbValues["size"] = "int";
 		$this->dbValues["upload_key"] = "string";
-		$this->dbValues["backed_up_at"] = "datetime";
-		$this->dbValues["backup_attempts"] = "int";
-		$this->dbValues["backup_error"] = "string";
-		$this->dbValues["backup_etag"] = "string";
 		$this->dbValues["created_at"] =  "datetime";
 		$this->dbValues["updated_at"] =  "datetime";
 

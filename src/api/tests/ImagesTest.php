@@ -160,18 +160,13 @@ class ImagesTest extends \PHPUnit\Framework\TestCase {
 		], array_keys($decoded));
 	}
 
-	public function testJsonSerializeHidesBackupStateAndInternalFlags(): void {
+	public function testJsonSerializeHidesInternalFlags(): void {
 		$img = new Images();
-		$img->backed_up_at = "2026-08-25 10:00:00";
-		$img->backup_attempts = 3;
-		$img->backup_error = "connection to bucket failed";
-		$img->backup_etag = "d41d8cd98f00b204e9800998ecf8427e";
 		$img->SetPlaceholder();
 		$img->accessId = "9f8b7c6d-1234-4e56-9abc-1234567890ab";
 
 		$json = json_encode($img);
-		foreach(["backed_up_at", "backup_attempts", "backup_error", "backup_etag",
-				"placeholder", "accessId", "Apikey", "private_key"] as $hidden) {
+		foreach(["placeholder", "accessId", "Apikey", "private_key"] as $hidden) {
 			$this->assertStringNotContainsString($hidden, $json);
 		}
 	}
