@@ -91,11 +91,14 @@ class GeneratedFileAdmin extends AdminFeature implements iAdminFeature {
 		$key = $_POST["apikey"];
 		$pattern = $_POST["pattern"];
 		$title = "Deleting: ".$pattern;
-		$rs = $pattern;
-		$manager = new FileManager();
-		$manager->SetApiKeyId($key);
-		$rs = $manager->DeleteGeneratedPattern($pattern);
-		include("views/rs.php");
+		try {
+			$manager = new FileManager();
+			$manager->SetApiKeyId($key);
+			$rs = $manager->DeleteGeneratedPattern($pattern);
+			include("views/rs.php");
+		} catch(\Exception $ex) {
+			AdminElements::Instance()->Alert($ex->getMessage(), 'danger');
+		}
 	}
 
 }

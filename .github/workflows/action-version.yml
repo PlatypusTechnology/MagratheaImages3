@@ -8,8 +8,8 @@ jobs:
       - name: "Executing build.sh"
         run: |
           echo "Running build.sh"
-          chmod +x ./build.sh
-          ./build.sh
+          chmod +x ./scripts/build.sh
+          ./scripts/build.sh
         shell: bash
       - name: Upload artifact
         uses: actions/upload-artifact@v4
