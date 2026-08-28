@@ -73,13 +73,31 @@ CREATE TABLE `images` (
 	`file_type` varchar(255) NULL,
 	`size` int(11) NULL,
 	`upload_key` varchar(255) NULL,
-	`backed_up_at` DATETIME NULL DEFAULT NULL,
-	`backup_attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
-	`backup_error` varchar(255) NULL DEFAULT NULL,
-	`backup_etag` varchar(64) NULL DEFAULT NULL,
 	`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	`updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	INDEX `idx_images_backup_pending` (`backed_up_at`, `backup_attempts`, `id`)
+	`updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- R2 backup state, kept off `images` -- see database/migrations/migration-3.6.1-image-backup-history.sql
+
+CREATE TABLE `images_backup_status` (
+	`image_id`        INT NOT NULL PRIMARY KEY,
+	`backed_up_at`    DATETIME NULL DEFAULT NULL,
+	`backup_attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+	`backup_error`    VARCHAR(255) NULL DEFAULT NULL,
+	`backup_etag`     VARCHAR(64) NULL DEFAULT NULL,
+	FOREIGN KEY (`image_id`) REFERENCES `images`(`id`) ON DELETE CASCADE,
+	INDEX `idx_images_backup_status_pending` (`backed_up_at`, `backup_attempts`, `image_id`)
+);
+
+CREATE TABLE `images_backup_attempts` (
+	`id`           INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	`image_id`     INT NOT NULL,
+	`attempted_at` DATETIME NOT NULL,
+	`succeeded`    TINYINT(1) NOT NULL,
+	`error`        VARCHAR(255) NULL DEFAULT NULL,
+	`etag`         VARCHAR(64) NULL DEFAULT NULL,
+	KEY `idx_image_id` (`image_id`, `attempted_at`),
+	FOREIGN KEY (`image_id`) REFERENCES `images`(`id`) ON DELETE CASCADE
 );
 
 

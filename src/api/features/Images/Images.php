@@ -17,8 +17,7 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase implements \JsonSe
 	 * The public API shape of an image, matching the `Image` schema in `swagger.yaml`.
 	 *
 	 * The API json_encode()s models directly, which would otherwise emit every public
-	 * property: the internal render flags `placeholder`/`accessId`, and the `backup_*`
-	 * columns, whose `backup_error` can carry endpoint and bucket details.
+	 * property, including the internal render flags `placeholder`/`accessId`.
 	 *
 	 * This is deliberately an explicit list rather than `ToArray()`. `ToArray()` merges
 	 * `relations["properties"]`, which holds the lazy-loaded `Apikey` -- and `Apikey`
