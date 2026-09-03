@@ -62,7 +62,7 @@ class MediaAdmin extends AdminFeature implements iAdminFeature {
 	}
 
 	public function Remove() {
-		$id = $_GET["id"];
+		$id = $_POST["id"];
 		$imageControl = new ImagesControl();
 		try {
 			$img = new Images($id);

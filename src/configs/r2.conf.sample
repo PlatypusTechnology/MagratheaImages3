@@ -1,0 +1,13 @@
+[dev]
+	enabled    = false
+	account_id = ""
+	bucket     = ""
+	access_key = ""
+	secret_key = ""
+
+[production]
+	enabled    = false
+	account_id = ""
+	bucket     = ""
+	access_key = ""
+	secret_key = ""

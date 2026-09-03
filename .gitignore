@@ -1,11 +1,11 @@
 _compiled
 sftp-config.json
 magrathea.conf
+r2.conf
 logs/*.txt
 logs/*.log
 logs/
 plugins
-database/*.sql
 medias
 backups
 

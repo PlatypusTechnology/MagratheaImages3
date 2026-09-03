@@ -16,6 +16,7 @@ use MagratheaImages3\MediaAdmin;
 use MagratheaImages3\GeneratedFileAdmin;
 use MagratheaImages3\SwaggerAdmin;
 use MagratheaImages3\MagratheaImagesApi;
+use MagratheaImages3\R2\R2Admin;
 
 class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
 	public function Initialize() {
@@ -52,6 +53,7 @@ class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
 		$this->features["medias"] = new MediaAdmin();
 		$this->features["gen-files"] = new GeneratedFileAdmin();
 		$this->features["images-crud"] = new ImagesAdmin();
+		$this->features["r2-backup"] = new R2Admin();
 		$this->features["swagger"] = new OpenApiAdmin("/swagger.php");
 	}
 
@@ -67,6 +69,7 @@ class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
 		->Add($this->features["medias"]->GetMenuItem())
 		->Add($this->features["gen-files"]->GetMenuItem())
 		->Add($this->features["images-crud"]->GetMenuItem())
+		->Add($this->features["r2-backup"]->GetMenuItem())
 
 		->Add($menu->CreateTitle("Settings"))
 		->Add($this->features["apikey"]->GetMenuItem())

@@ -6,6 +6,7 @@ use GdImage;
 use Magrathea2\Config;
 use Magrathea2\Exceptions\MagratheaApiException;
 use MagratheaImages3\Apikey\ApikeyControl;
+use MagratheaImages3\ErrorCodes;
 use MagratheaImages3\Images\Images;
 
 class ImageViewer {
@@ -120,7 +121,7 @@ class ImageViewer {
 			self::HeaderExtension("webp");
 			header("Content-Length: ".filesize($file));
 			$fp = fopen($file, 'rb');
-			if(!$fp) throw new MagratheaApiException("could not open file [".$file."]");
+			if(!$fp) ErrorCodes::Instance()->ThrowException(5005, null, $file);
 			fpassthru($fp);
 			exit;
 		}
@@ -137,7 +138,7 @@ class ImageViewer {
 		header("Content-Length: ".filesize($this->file));
 		// dump the picture and stop the script
 		$fp = fopen($this->file, 'rb');
-		if(!$fp) throw new MagratheaApiException("could not open file [".$this->file."]");
+		if(!$fp) ErrorCodes::Instance()->ThrowException(5005, null, $this->file);
 		fpassthru($fp);
 		exit;
 	}
@@ -145,7 +146,7 @@ class ImageViewer {
 	public function ViewGD() {
 		if($this->resizer == null) {
 			if($this->fileExists) return $this->ViewFile();
-			else throw new MagratheaApiException("Resizer is empty and file does not exists", 500);
+			else ErrorCodes::Instance()->ThrowException(5005, null, "resizer is empty and file does not exist");
 		} 
 		return $this->DisplayFromGD($this->resizer->GetGD(), $this->resizer->extension);
 	}
@@ -190,7 +191,7 @@ class ImageViewer {
 			} catch(MagratheaApiException $ex) {
 				throw $ex;
 			} catch(\Exception $ex) {
-				throw new MagratheaApiException("Error generating image: ".$ex->getMessage(), true, 500, $ex);
+				ErrorCodes::Instance()->ThrowException(5004, null, $ex->getMessage());
 			}
 		}
 		return $this;

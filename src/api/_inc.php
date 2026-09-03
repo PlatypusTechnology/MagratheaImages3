@@ -9,14 +9,17 @@ include("shared/Helper.php");
 
 try {
 	Magrathea2\MagratheaPHP::Instance()
-		->MinVersion("2.2.1")
+		->MinVersion("2.3.0")
 		->AppPath(realpath(dirname(__FILE__)))
 		->AddCodeFolder(
 			"admin",
 			"admin/GeneratedFileManager",
 			"admin/MediaManager",
+			"shared",
+			"error-manager",
 		)
 		->AddFeature("Apikey", "Images")
+		->AddFeature("R2")
 		// ->Debug()
 		// ->Dev()
 //		->StartDB()

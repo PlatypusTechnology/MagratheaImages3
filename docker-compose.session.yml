@@ -1,6 +1,6 @@
 version: '3.7'
 # Project name is set via -p flag (session name)
-# Required env vars (exported by docker-install.sh): SESSION, APP_PORT
+# Required env vars (exported by scripts/docker-install.sh): SESSION, APP_PORT
 
 services:
 

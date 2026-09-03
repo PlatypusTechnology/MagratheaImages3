@@ -4,13 +4,11 @@ info:
   description: |
     MagratheaImages 3 — image hosting and resizing API.
 
-    The API supports two security modes controlled by the `secure_api` config flag:
-    - **Public mode**: images are accessed by ID only (`/image/:id/...`)
-    - **Secure mode**: images require a public key in the path (`/image/:key/:id/...`)
+    Image viewing endpoints require a public key in the path (`/image/:key/:id/...`).
 
     Upload endpoints accept either a `private_key` in the POST body or the `private_key`
     in the URL path. Deletion also requires the private key.
-  version: "3.4.3"
+  version: "3.6.2"
 
 servers:
   - url: "{baseUrl}"
@@ -24,10 +22,8 @@ tags:
     description: Version, settings, and token info
   - name: keys
     description: API key management
-  - name: images-public
-    description: Image viewing endpoints (public mode — no key in URL)
   - name: images-secure
-    description: Image viewing endpoints (secure mode — public key required in URL)
+    description: Image viewing endpoints (public key required in URL)
   - name: upload
     description: Image upload endpoints
 
@@ -49,6 +45,11 @@ components:
         id:
           type: integer
           example: 42
+        uuid:
+          type: string
+          format: uuid
+          description: Stable UUID identifier for this image. Accepted anywhere `:id` is accepted on viewing endpoints (not on delete). Required when `force_uuid` is enabled.
+          example: "9f8b7c6d-1234-4e56-9abc-1234567890ab"
         name:
           type: string
           example: "my_photo"
@@ -160,10 +161,6 @@ components:
         version:
           type: string
           example: "3.3.1"
-        secure:
-          type: boolean
-          description: Whether the API is running in secure mode
-          example: false
         environment:
           type: string
           example: "production"
@@ -195,10 +192,6 @@ components:
           type: integer
           description: Configured thumbnail size in pixels
           example: 300
-        secure:
-          type: boolean
-          description: Whether the API requires a public key in image URLs
-          example: false
         upload_limit_bytes:
           type: integer
           description: Maximum allowed upload size in bytes (min of PHP post_max_size and upload_max_filesize)
@@ -207,6 +200,61 @@ components:
           type: string
           description: Human-readable upload limit
           example: "10 MB"
+
+    ChangelogEntry:
+      type: object
+      properties:
+        version:
+          type: string
+          example: "3.4.3"
+        date:
+          type: string
+          nullable: true
+          example: "2026-08-04"
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: ["new", "fix", "improvement", "improvements"]
+                example: "fix"
+              description:
+                type: string
+                example: "fixed the thing"
+
+    ValidateResponse:
+      type: object
+      description: Self-check of server configuration and environment health.
+      properties:
+        valid:
+          type: boolean
+          description: True only if every check below is "ok"
+          example: true
+        checks:
+          type: object
+          properties:
+            max_upload_size:
+              type: string
+              description: "\"ok\" if `max_upload_size` is unset or a valid size string, else \"invalid\""
+              enum: ["ok", "invalid"]
+              example: "ok"
+            medias_path:
+              type: string
+              description: "\"ok\", \"invalid\" (missing/not a directory), or \"permissions_failed\" (not writable)"
+              enum: ["ok", "invalid", "permissions_failed"]
+              example: "ok"
+            logs_path:
+              type: string
+              description: "\"ok\", \"invalid\" (missing/not a directory), or \"permissions_failed\" (not writable)"
+              enum: ["ok", "invalid", "permissions_failed"]
+              example: "ok"
+            database:
+              type: string
+              description: "\"ok\" or \"fail\" — whether a database connection could be opened"
+              enum: ["ok", "fail"]
+              example: "ok"
 
     UploadSuccessResponse:
       type: object
@@ -236,6 +284,15 @@ components:
         data:
           nullable: true
           description: Additional error context
+
+    ImageDetailsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: "#/components/schemas/Image"
 
     ViewImagesResponse:
       type: object
@@ -318,6 +375,36 @@ components:
                   description: Whether generated/resized variants were deleted
                   example: true
 
+    DeleteKeyResponse:
+      type: object
+      properties:
+        apikey:
+          type: boolean
+          description: Whether the `apikey` row was deleted
+          example: true
+        images_deleted:
+          type: integer
+          description: Number of image rows (and their files) that were removed
+          example: 12
+        folder:
+          type: string
+          description: Absolute path of the key's media folder that was targeted for removal
+          example: "/var/www/media/myfolder/"
+        folder_deleted:
+          type: boolean
+          description: Whether the media folder itself was fully removed
+          example: true
+        warnings:
+          type: array
+          description: |
+            Per-image or per-file cleanup failures (e.g. a raw file already missing
+            on disk). Non-empty warnings do not fail the request -- the database
+            rows are gone either way. Callers that care about complete disk cleanup
+            should log this even on a 200.
+          items:
+            type: string
+          example: []
+
     DebugResizeResponse:
       type: object
       description: Debug info about the generated image
@@ -360,13 +447,69 @@ components:
 
     ApiError:
       type: object
+      description: |
+        Envelope returned for every API error (non-2xx). `data.code` is the specific
+        application error code (see table below); the HTTP status is derived from it
+        (`code` in 100-599 is used as-is, `code` in 1000-9999 uses `floor(code / 10)`
+        — e.g. `4043` → HTTP 404).
+
+        | code | HTTP | meaning |
+        |------|------|---------|
+        | 400  | 400  | Invalid Data |
+        | 4001 | 400  | Incorrect upload data |
+        | 4002 | 400  | File size greater than accepted (total POST body over `post_max_size`) |
+        | 4003 | 400  | File too big for this upload (single file over `upload_max_filesize`) |
+        | 4004 | 400  | Image must be requested by UUID (`force_uuid` enabled) |
+        | 4005 | 400  | Private key is required |
+        | 4006 | 400  | Invalid URL for upload |
+        | 4007 | 400  | Private key and image id are required |
+        | 4008 | 400  | Folder cannot be empty |
+        | 401  | 401  | Unauthorized |
+        | 4011 | 401  | Wrong private secret (key creation) |
+        | 403  | 403  | Forbidden |
+        | 4031 | 403  | Private secret corrupted |
+        | 4032 | 403  | Key does not match image |
+        | 4033 | 403  | Usage limit reached |
+        | 4034 | 403  | Key expired |
+        | 4035 | 403  | Key not active |
+        | 404  | 404  | Not found |
+        | 4041 | 404  | Public key not found |
+        | 4042 | 404  | Private key not found |
+        | 4043 | 404  | Image not found |
+        | 4044 | 404  | Api key not found |
+        | 415  | 415  | Unsupported Media Type |
+        | 4151 | 415  | Invalid image extension |
+        | 4152 | 415  | Invalid image type |
+        | 4153 | 415  | Could not read image dimensions; file may be corrupt |
+        | 500  | 500  | Server error |
+        | 5001 | 500  | Error on internal API request |
+        | 5002 | 500  | Incorrect configuration |
+        | 5003 | 500  | Permissions failed on server |
+        | 5004 | 500  | Image generation failed |
+        | 5005 | 500  | Could not open file |
       properties:
-        error:
-          type: string
-          example: "key [xyz] does not exists"
-        code:
-          type: integer
-          example: 404
+        success:
+          type: boolean
+          example: false
+        data:
+          type: object
+          properties:
+            type:
+              type: string
+              example: "exception"
+            error:
+              nullable: true
+              description: Additional error context (varies by error; often null)
+            code:
+              type: integer
+              description: Application error code — see table in this schema's description
+              example: 4042
+            message:
+              type: string
+              example: "Private key not found: a1b2c3d4e5f6g7h8i9j0k1l2m"
+            debug_level:
+              type: string
+              example: "none"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Paths
@@ -415,6 +558,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SettingsResponse"
+
+  /changelog:
+    get:
+      tags: [system]
+      summary: Get recent changelog entries
+      description: Returns the 5 most recent versions parsed from `changelog.md`. Cached.
+      operationId: getChangelog
+      responses:
+        "200":
+          description: Recent changelog entries, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChangelogEntry"
+
+  /error-codes:
+    get:
+      tags: [system]
+      summary: Get all known error codes
+      description: Returns the full list of error codes and messages defined in `error_codes.conf`. Cached.
+      operationId: getErrorCodes
+      responses:
+        "200":
+          description: Map of error code to error message
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                example:
+                  "400": "Invalid Data"
+                  "4001": "Incorrect upload data"
+
+  /validate:
+    get:
+      tags: [system]
+      summary: Validate server configuration and environment
+      description: Runs self-checks against upload size config, media/log folder permissions, and database connectivity.
+      operationId: validateEnvironment
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidateResponse"
 
   /token:
     get:
@@ -495,8 +687,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Apikey"
+        "400":
+          description: "`private_key` missing (code 4005)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "404":
-          description: Key not found
+          description: "Key not found (code 4042)"
           content:
             application/json:
               schema:
@@ -533,8 +731,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ViewImagesResponse"
+        "400":
+          description: "`private_key` missing (code 4005)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "404":
-          description: Key not found
+          description: "Key not found (code 4042)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /key/{private_key}/cached:
     get:
@@ -604,7 +812,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/NewKeyResponse"
         "400":
-          description: Invalid secret or missing data
+          description: "`folder` missing (code 4008)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: "Wrong `secret` (code 4011)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Server has no `secret` configured (code 5002), or key generation exhausted its retries (code 5001)"
           content:
             application/json:
               schema:
@@ -616,7 +836,14 @@ paths:
     post:
       tags: [upload]
       summary: Upload an image (key in body)
-      description: Uploads an image file. The private key must be supplied in the POST body as `key`.
+      description: |
+        Uploads an image file. The private key must be supplied in the POST body as `key`.
+
+        Key-resolution errors (missing/not-found/expired/inactive/over-limit key, no file
+        received) are returned as real HTTP error responses (`ApiError`). Once the key is
+        resolved, file-level validation errors (invalid extension/mime, corrupt image,
+        destination folder not writable) are instead returned as HTTP 200 with
+        `UploadFailResponse` (`success: false`).
       operationId: uploadImage
       requestBody:
         required: true
@@ -641,19 +868,43 @@ paths:
                   description: Optional subfolder within the key's folder
       responses:
         "200":
-          description: Upload result
+          description: Upload result (success, or file-level validation failure — see description)
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: "#/components/schemas/UploadSuccessResponse"
                   - $ref: "#/components/schemas/UploadFailResponse"
+        "400":
+          description: "Private key missing (code 4005) or no file received (code 4001)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key usage limit reached (4033), expired (4034), or not active (4035)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Private key not found (code 4042)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /upload-url:
     post:
       tags: [upload]
       summary: Upload an image from a URL (key in body)
-      description: Downloads an image from a remote URL and stores it. The private key must be supplied in the POST body.
+      description: |
+        Downloads an image from a remote URL and stores it. The private key must be supplied
+        in the POST body.
+
+        Unlike file uploads, all validation errors here (invalid mime type, corrupt image,
+        destination folder not writable) are returned as real HTTP error responses
+        (`ApiError`), not as an HTTP 200 `UploadFailResponse`.
       operationId: uploadImageFromUrl
       requestBody:
         required: true
@@ -683,11 +934,33 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: "#/components/schemas/UploadSuccessResponse"
-                  - $ref: "#/components/schemas/UploadFailResponse"
+                $ref: "#/components/schemas/UploadSuccessResponse"
         "400":
-          description: Invalid URL or key
+          description: "Private key missing (4005) or invalid URL (4006)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key usage limit reached (4033), expired (4034), or not active (4035)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Private key not found (code 4042)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "415":
+          description: "Downloaded content is not a supported image type (4152), or dimensions could not be read (4153)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Destination folder not writable (code 5003)"
           content:
             application/json:
               schema:
@@ -697,7 +970,14 @@ paths:
     post:
       tags: [upload]
       summary: Upload an image (key in path)
-      description: Uploads an image file using the private key supplied in the URL path.
+      description: |
+        Uploads an image file using the private key supplied in the URL path.
+
+        Key-resolution errors (not-found/expired/inactive/over-limit key, no file received)
+        are returned as real HTTP error responses (`ApiError`). Once the key is resolved,
+        file-level validation errors (invalid extension/mime, corrupt image, destination
+        folder not writable) are instead returned as HTTP 200 with `UploadFailResponse`
+        (`success: false`).
       operationId: uploadImageWithKey
       parameters:
         - name: private_key
@@ -725,19 +1005,36 @@ paths:
                   description: Optional subfolder
       responses:
         "200":
-          description: Upload result
+          description: Upload result (success, or file-level validation failure — see description)
           content:
             application/json:
               schema:
                 oneOf:
                   - $ref: "#/components/schemas/UploadSuccessResponse"
                   - $ref: "#/components/schemas/UploadFailResponse"
+        "403":
+          description: "Key usage limit reached (4033), expired (4034), or not active (4035)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Private key not found (code 4042)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /key/{private_key}/upload-url:
     post:
       tags: [upload]
       summary: Upload an image from a URL (key in path)
-      description: Downloads an image from a remote URL using the private key in the URL path.
+      description: |
+        Downloads an image from a remote URL using the private key in the URL path.
+
+        Unlike file uploads, all validation errors here (invalid mime type, corrupt image,
+        destination folder not writable) are returned as real HTTP error responses
+        (`ApiError`), not as an HTTP 200 `UploadFailResponse`.
       operationId: uploadImageFromUrlWithKey
       parameters:
         - name: private_key
@@ -770,11 +1067,37 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: "#/components/schemas/UploadSuccessResponse"
-                  - $ref: "#/components/schemas/UploadFailResponse"
+                $ref: "#/components/schemas/UploadSuccessResponse"
         "400":
-          description: Invalid URL or key
+          description: "Invalid URL (code 4006)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key usage limit reached (4033), expired (4034), or not active (4035)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Private key not found (code 4042)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "415":
+          description: "Downloaded content is not a supported image type (4152), or dimensions could not be read (4153)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Destination folder not writable (code 5003)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /key/{private_key}/delete/{id}:
     delete:
@@ -807,361 +1130,167 @@ paths:
               schema:
                 $ref: "#/components/schemas/RemoveResponse"
         "400":
-          description: Key does not match image
+          description: "`private_key` or `id` missing (code 4007)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key does not match image (code 4032)"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
 
-  # ── Images — Public mode ────────────────────────────────────────────────────
+  /key/{private_key}:
+    delete:
+      tags: [upload]
+      summary: Delete an API key and all its images
+      description: |
+        Deletes the entire API key — every image row and file under it (raw + every
+        generated/resized variant), the key's whole media folder (catching anything
+        not tracked as an `images` row), and the `apikey` row itself. A single call
+        that fully replaces looping over `DELETE /key/{private_key}/delete/{id}` per
+        image.
 
-  /image/{id}/details:
-    get:
-      tags: [images-public]
-      summary: Get image metadata (public mode)
-      description: Returns the image record without the placeholder flag. Only available when `secure_api` is disabled.
-      operationId: getImageDetails
+        Requires the **private key** in the path, same as every other image-mutating
+        route in this API. `public_key` is required too, but **as a query parameter**
+        rather than a path segment — deliberately, so this one call can't be
+        pattern-matched off its siblings without reading this. It is not a secondary
+        access-control gate (whoever holds `private_key` already has full capability
+        over the key); it's a "prove you meant to target this key" check.
+
+        A file-level failure on an individual image (e.g. a raw file already missing
+        on disk) does not fail the request — the database rows are the source of
+        truth for what's servable, and those are removed either way. Check
+        `warnings` in the response even on a 200 if complete disk cleanup matters to
+        the caller.
+
+        Idempotent: calling this on an already-deleted (or never-existing) private
+        key returns the same 404 (4042) as an unknown key — safe for a caller to
+        treat as "already gone, nothing to do."
+      operationId: deleteKey
       parameters:
-        - name: id
+        - name: private_key
           in: path
           required: true
           schema:
-            type: integer
-          example: 42
+            type: string
+          description: Private key of the API key to delete
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m"
+        - name: public_key
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Public key of the same API key pair, confirming the caller meant to target this key
+          example: "abc123def456"
       responses:
         "200":
-          description: Image metadata
+          description: Deletion result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Image"
-        "404":
-          description: Image not found
-
-  /image/{id}:
-    get:
-      tags: [images-public]
-      summary: View image — auto size (public mode)
-      description: |
-        Serves the image binary. Resolution is determined in this order:
-        1. Query params `w`/`width` and `h`/`height`
-        2. Query param `size` (e.g. `800x600`)
-        3. Falls back to thumbnail if no dimensions provided.
-
-        Only available when `secure_api` is disabled.
-      operationId: viewImage
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 42
-        - name: w
-          in: query
-          schema:
-            type: integer
-          description: Target width (alias `width`)
-        - name: h
-          in: query
-          schema:
-            type: integer
-          description: Target height (alias `height`)
-        - name: size
-          in: query
-          schema:
-            type: string
-          description: "Size in WxH format, e.g. `800x600`"
-        - name: stretch
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-          description: "1 = ignore aspect ratio and stretch to exact dimensions"
-        - name: placeholder
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-          description: "1 = return a low-quality placeholder version"
-        - name: generate
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-          description: "1 = force re-generation even if cached file exists"
-      responses:
-        "200":
-          description: Image binary
-          content:
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-            image/png:
-              schema:
-                type: string
-                format: binary
-            image/webp:
-              schema:
-                type: string
-                format: binary
-            image/gif:
-              schema:
-                type: string
-                format: binary
-            image/svg+xml:
-              schema:
-                type: string
-                format: binary
-        "404":
-          description: Image not found
-
-  /image/{id}/x/{size}:
-    get:
-      tags: [images-public]
-      summary: View image at explicit size (public mode)
-      description: Serves the image resized to the given `WxH` dimension. Only available when `secure_api` is disabled.
-      operationId: viewImageAtSize
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 42
-        - name: size
-          in: path
-          required: true
-          schema:
-            type: string
-          description: "Dimensions in WxH format"
-          example: "800x600"
-        - name: stretch
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-        - name: placeholder
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-        - name: generate
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-      responses:
-        "200":
-          description: Resized image binary
-          content:
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-            image/png:
-              schema:
-                type: string
-                format: binary
-            image/webp:
-              schema:
-                type: string
-                format: binary
-        "404":
-          description: Image not found
-
-  /image/{id}/raw:
-    get:
-      tags: [images-public]
-      summary: View original image file (public mode)
-      description: Serves the original uploaded file without any resizing. Only available when `secure_api` is disabled.
-      operationId: viewImageRaw
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 42
-      responses:
-        "200":
-          description: Original image binary
-          content:
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-            image/png:
-              schema:
-                type: string
-                format: binary
-            image/webp:
-              schema:
-                type: string
-                format: binary
-            image/svg+xml:
-              schema:
-                type: string
-                format: binary
-        "404":
-          description: Image not found
-
-  /image/{id}/thumb:
-    get:
-      tags: [images-public]
-      summary: View image thumbnail (public mode)
-      description: |
-        Serves the thumbnail version of the image (size configured by `thumb_size`).
-        SVGs are served as raw. Only available when `secure_api` is disabled.
-      operationId: viewImageThumb
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 42
-        - name: placeholder
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-          description: "1 = return a low-quality placeholder version"
-        - name: generate
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-          description: "1 = force re-generation"
-      responses:
-        "200":
-          description: Thumbnail image binary
-          content:
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-            image/png:
-              schema:
-                type: string
-                format: binary
-            image/webp:
-              schema:
-                type: string
-                format: binary
-        "404":
-          description: Image not found
-
-  /image/{id}/preview/{size}:
-    get:
-      tags: [images-public]
-      summary: Preview image at size without caching (public mode)
-      description: |
-        Generates the image at the requested size on-the-fly without saving to disk.
-        Use `debug=1` to get a JSON debug response instead of the binary.
-        Only available when `secure_api` is disabled.
-      operationId: previewImage
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 42
-        - name: size
-          in: path
-          required: true
-          schema:
-            type: string
-          description: "Dimensions in WxH format, or `thumb`"
-          example: "400x300"
-        - name: stretch
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-        - name: placeholder
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-        - name: debug
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-          description: "1 = return JSON debug info instead of image binary"
-      responses:
-        "200":
-          description: Preview image binary, or debug JSON when debug=1
-          content:
-            image/jpeg:
-              schema:
-                type: string
-                format: binary
-            image/png:
-              schema:
-                type: string
-                format: binary
-            image/webp:
-              schema:
-                type: string
-                format: binary
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DebugResizeResponse"
-        "404":
-          description: Image not found
-
-  /image/{id}/debug/{size}:
-    get:
-      tags: [images-public]
-      summary: Debug image resize (public mode)
-      description: Returns debug information about how the image is resized to the given dimensions. Only available when `secure_api` is disabled.
-      operationId: debugResizeImage
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-          example: 42
-        - name: size
-          in: path
-          required: true
-          schema:
-            type: string
-          description: "Dimensions in WxH format"
-          example: "800x600"
-      responses:
-        "200":
-          description: Debug information
+                $ref: "#/components/schemas/DeleteKeyResponse"
+        "400":
+          description: "`private_key` missing (code 4005)"
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DebugResizeResponse"
+                $ref: "#/components/schemas/ApiError"
         "404":
-          description: Image not found
+          description: "Private key not found or already deleted (4042); `public_key` missing or not matching the private key's own public key (also 4042, indistinguishable on purpose)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
-  # ── Images — Secure mode ────────────────────────────────────────────────────
+  /key/{private_key}/clone-from/{public_key}/{image_uuid}:
+    post:
+      tags: [upload]
+      summary: Clone an image into another key
+      description: |
+        Copies an image owned by `public_key` into the folder owned by `private_key`,
+        creating a new, independently-owned `images` row (own id/uuid/filename) and a
+        copy of the raw file. Generated/resized variants are not copied — they regenerate
+        lazily under the clone's own id/uuid, exactly like a freshly uploaded image.
+
+        `public_key` and `private_key` must not belong to the same API key pair.
+
+        Counts as a use of the destination key, same as an upload.
+      operationId: cloneImage
+      parameters:
+        - name: private_key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Private key of the destination key (the actor cloning)
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m"
+        - name: public_key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Public key of the source key that owns the image being cloned
+          example: "abc123def456"
+        - name: image_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the source image to clone
+          example: "9f8b7c6d-1234-4e56-9abc-1234567890ab"
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                subfolder:
+                  type: string
+                  description: Optional subfolder for the clone. Defaults to "cloned"; the source image's own subfolder is not carried over.
+      responses:
+        "200":
+          description: Clone result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadSuccessResponse"
+        "400":
+          description: "`private_key` missing (4005), `public_key` missing (400), or `image_uuid` missing (400)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Source and destination belong to the same key pair (4036); source image does not belong to `public_key` (4032); destination key usage limit reached (4033), expired (4034), or not active (4035)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Private key not found (4042); public key not found (4041); image not found (4043)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Source raw file missing on disk (5005), destination folder not writable (5003), or the file copy failed (5006)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  # ── Images ───────────────────────────────────────────────────────────────────
 
   /image/{public_key}/{id}/details:
     get:
       tags: [images-secure]
-      summary: Get image metadata (secure mode)
-      description: Returns the image record. Requires the public key in the path. Only available when `secure_api` is enabled.
+      summary: Get image metadata
+      description: Returns the image record. Requires the public key in the path.
       operationId: getImageDetailsSecure
       parameters:
         - name: public_key
@@ -1175,7 +1304,10 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            oneOf:
+              - type: integer
+              - type: string
+          description: Numeric image ID, or its UUID. When `force_uuid` is enabled, only the UUID form is accepted (400 otherwise).
           example: 42
       responses:
         "200":
@@ -1183,17 +1315,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Image"
-        "404":
-          description: Image not found
+                $ref: "#/components/schemas/ImageDetailsResponse"
         "400":
-          description: Key-image mismatch
+          description: "`force_uuid` enabled and `id` is not a UUID (code 4004)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key does not match image (code 4032)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Image not found (4043), or public key not found (4041)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /image/{public_key}/{id}:
     get:
       tags: [images-secure]
-      summary: View image — auto size (secure mode)
-      description: Serves the image binary. Same size/stretch/placeholder/generate params as public mode. Only available when `secure_api` is enabled.
+      summary: View image — auto size
+      description: Serves the image binary. Resolution is determined by query params `w`/`width`+`h`/`height`, or `size` (e.g. `800x600`), falling back to the thumbnail if none are provided.
       operationId: viewImageSecure
       parameters:
         - name: public_key
@@ -1207,7 +1353,10 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            oneOf:
+              - type: integer
+              - type: string
+          description: Numeric image ID, or its UUID. When `force_uuid` is enabled, only the UUID form is accepted (400 otherwise).
           example: 42
         - name: w
           in: query
@@ -1256,13 +1405,35 @@ paths:
               schema:
                 type: string
                 format: binary
+        "400":
+          description: "`force_uuid` enabled and `id` is not a UUID (code 4004)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key does not match image (code 4032)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "404":
-          description: Image not found
+          description: "Image not found (4043), or public key not found (4041)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Image generation failed (5004), GD not installed (5002), or destination folder not writable (5003)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /image/{public_key}/{id}/x/{size}:
     get:
       tags: [images-secure]
-      summary: View image at explicit size (secure mode)
+      summary: View image at explicit size
       operationId: viewImageAtSizeSecure
       parameters:
         - name: public_key
@@ -1275,7 +1446,10 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            oneOf:
+              - type: integer
+              - type: string
+          description: Numeric image ID, or its UUID. When `force_uuid` is enabled, only the UUID form is accepted (400 otherwise).
           example: 42
         - name: size
           in: path
@@ -1313,11 +1487,35 @@ paths:
               schema:
                 type: string
                 format: binary
+        "400":
+          description: "`force_uuid` enabled and `id` is not a UUID (code 4004)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key does not match image (code 4032)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Image not found (4043), or public key not found (4041)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Image generation failed (5004), GD not installed (5002), or destination folder not writable (5003)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /image/{public_key}/{id}/raw:
     get:
       tags: [images-secure]
-      summary: View original image file (secure mode)
+      summary: View original image file
       operationId: viewImageRawSecure
       parameters:
         - name: public_key
@@ -1330,7 +1528,10 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            oneOf:
+              - type: integer
+              - type: string
+          description: Numeric image ID, or its UUID. When `force_uuid` is enabled, only the UUID form is accepted (400 otherwise).
           example: 42
       responses:
         "200":
@@ -1344,11 +1545,35 @@ paths:
               schema:
                 type: string
                 format: binary
+        "400":
+          description: "`force_uuid` enabled and `id` is not a UUID (code 4004)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key does not match image (code 4032)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Image not found (4043), or public key not found (4041)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Could not open raw file (code 5005)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /image/{public_key}/{id}/thumb:
     get:
       tags: [images-secure]
-      summary: View image thumbnail (secure mode)
+      summary: View image thumbnail
       operationId: viewImageThumbSecure
       parameters:
         - name: public_key
@@ -1361,7 +1586,10 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            oneOf:
+              - type: integer
+              - type: string
+          description: Numeric image ID, or its UUID. When `force_uuid` is enabled, only the UUID form is accepted (400 otherwise).
           example: 42
         - name: placeholder
           in: query
@@ -1387,11 +1615,35 @@ paths:
               schema:
                 type: string
                 format: binary
+        "400":
+          description: "`force_uuid` enabled and `id` is not a UUID (code 4004)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key does not match image (code 4032)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Image not found (4043), or public key not found (4041)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Image generation failed (5004), GD not installed (5002), or destination folder not writable (5003)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /image/{public_key}/{id}/preview/{size}:
     get:
       tags: [images-secure]
-      summary: Preview image at size without caching (secure mode)
+      summary: Preview image at size without caching
       operationId: previewImageSecure
       parameters:
         - name: public_key
@@ -1404,7 +1656,10 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            oneOf:
+              - type: integer
+              - type: string
+          description: Numeric image ID, or its UUID. When `force_uuid` is enabled, only the UUID form is accepted (400 otherwise).
           example: 42
         - name: size
           in: path
@@ -1445,3 +1700,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DebugResizeResponse"
+        "400":
+          description: "`force_uuid` enabled and `id` is not a UUID (code 4004)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Key does not match image (code 4032)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Image not found (4043), or public key not found (4041)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Image generation failed (5004), GD not installed (5002), or destination folder not writable (5003)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"

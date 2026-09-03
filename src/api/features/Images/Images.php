@@ -1,13 +1,47 @@
 <?php
 namespace MagratheaImages3\Images;
 
-class Images extends \MagratheaImages3\Images\Base\ImagesBase {
+class Images extends \MagratheaImages3\Images\Base\ImagesBase implements \JsonSerializable {
 
 	public bool $placeholder = false;
+
+	// Set per-request by ImagesApi::ResolveImage() to whichever identifier (id or
+	// uuid) the current request actually resolved through; not a DB field.
+	public ?string $accessId = null;
 
 	// Leaves headroom under the 255-byte filesystem limit and the `name`/`filename`
 	// varchar(255) columns once the "{id}_" prefix is added.
 	const MAX_FILE_SEGMENT_LENGTH = 200;
+
+	/**
+	 * The public API shape of an image, matching the `Image` schema in `swagger.yaml`.
+	 *
+	 * The API json_encode()s models directly, which would otherwise emit every public
+	 * property, including the internal render flags `placeholder`/`accessId`.
+	 *
+	 * This is deliberately an explicit list rather than `ToArray()`. `ToArray()` merges
+	 * `relations["properties"]`, which holds the lazy-loaded `Apikey` -- and `Apikey`
+	 * exposes `private_key` as a public property. An allowlist can only ever emit what
+	 * is written here.
+	 */
+	public function jsonSerialize(): mixed {
+		return [
+			"id" => $this->id,
+			"uuid" => $this->uuid,
+			"name" => $this->name,
+			"filename" => $this->filename,
+			"extension" => $this->extension,
+			"folder" => $this->folder,
+			"subfolder" => $this->subfolder,
+			"width" => $this->width,
+			"height" => $this->height,
+			"file_type" => $this->file_type,
+			"size" => $this->size,
+			"upload_key" => $this->upload_key,
+			"created_at" => $this->created_at,
+			"updated_at" => $this->updated_at,
+		];
+	}
 
 	public function SetPlaceholder(): Images {
 		$this->placeholder = true;
@@ -88,7 +122,7 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase {
 	}
 
 	public function BuildGenFileName(string $addon): string {
-		return $this->id."_".$addon;
+		return ($this->accessId ?? $this->id)."_".$addon;
 	}
 
 	public function BuildFilename(string $addon): string {

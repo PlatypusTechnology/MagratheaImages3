@@ -24,12 +24,14 @@ class Apikey extends \MagratheaImages3\Apikey\Base\ApikeyBase {
 
 	public function ValidateKey(): array {
 		$error = null;
-		if($this->usage_limit > 0 && $this->uses == $this->usage_limit) $error = "usage limit reached";
-		if($this->expiration != null && $this->expiration < now()) $error = "key expired";
-		if(!$this->active) $error = "key not active";
+		$code = null;
+		if($this->usage_limit > 0 && $this->uses == $this->usage_limit) { $error = "usage limit reached"; $code = 4033; }
+		if($this->expiration != null && $this->expiration < now()) { $error = "key expired"; $code = 4034; }
+		if(!$this->active) { $error = "key not active"; $code = 4035; }
 		return [
 			"ok" => ($error == null),
-			"data" => $error
+			"data" => $error,
+			"code" => $code,
 		];
 	}
 
