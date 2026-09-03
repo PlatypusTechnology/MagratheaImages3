@@ -40,6 +40,7 @@ class FileManager {
 		if(!file_exists($dFile)) {
 			throw new \Magrathea2\Exceptions\MagratheaException("file does not exists: [".$dFile."]");
 		}
+		$this->assertWithinBasePath($dFile);
 		try {
 			return unlink($dFile);
 		} catch(\Exception $ex) {
@@ -48,12 +49,42 @@ class FileManager {
 	}
 
 	public function DeleteGeneratedPattern($pattern): array {
-		$command = "rm -v ".$this->path."generated/".$pattern;
-		$rs = shell_exec($command);
+		// {id-or-uuid}_ prefix (matches Images::BuildGenFileName()), followed by any
+		// combination of the addon shapes it can produce ("thumb", "200x300", "200x300-s",
+		// "..._placeholder", etc.) and/or glob wildcards -- but nothing that could reach
+		// a shell or a path separator.
+		if (!preg_match('/^(\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_[A-Za-z0-9_.*-]+$/', $pattern)) {
+			throw new \Magrathea2\Exceptions\MagratheaException("invalid pattern: [".$pattern."]");
+		}
+
+		$generatedDir = realpath($this->path."generated");
+		$deleted = [];
+		if ($generatedDir !== false) {
+			foreach (glob($this->path."generated/".$pattern) ?: [] as $match) {
+				$real = realpath($match);
+				if ($real === false || !is_file($real) || strpos($real, $generatedDir.DIRECTORY_SEPARATOR) !== 0) {
+					continue;
+				}
+				$deleted[$match] = unlink($real);
+			}
+		}
+
 		return [
-			"command" => $command,
-			"response" => $rs,
+			"pattern" => $pattern,
+			"deleted" => $deleted,
 		];
+	}
+
+	/**
+	 * Guards against path traversal / symlink escapes: rejects any resolved path
+	 * that falls outside this manager's base path.
+	 */
+	private function assertWithinBasePath(string $resolvedPath): void {
+		$base = realpath($this->path);
+		$real = realpath($resolvedPath);
+		if ($base === false || $real === false || strpos($real, $base.DIRECTORY_SEPARATOR) !== 0) {
+			throw new \Magrathea2\Exceptions\MagratheaException("path outside allowed folder: [".$resolvedPath."]");
+		}
 	}
 
 

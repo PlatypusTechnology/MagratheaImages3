@@ -1,10 +1,12 @@
-xit#!/bin/bash
+#!/bin/bash
 
 clear
 
 # Bash script to configure MagratheaImages3 system interactively
-CONFIG_SAMPLE="$(dirname "$0")/src/configs/magrathea.conf.sample"
-CONFIG_FILE="$(dirname "$0")/src/configs/magrathea.conf"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+CONFIG_SAMPLE="$ROOT_DIR/src/configs/magrathea.conf.sample"
+CONFIG_FILE="$ROOT_DIR/src/configs/magrathea.conf"
 
 # Ask user for configuration values
 echo "--- MagratheaImages3 Installer ---"
@@ -85,7 +87,7 @@ sleep 0.5
 echo -e "\n\n\033[1;36m✨ Creating bootstrap file... ✨\033[0m\n"
 
 # Remove 'die;' from bootstrap.php
-BOOTSTRAP_FILE="$(dirname "$0")/src/api/bootstrap.php"
+BOOTSTRAP_FILE="$ROOT_DIR/src/api/bootstrap.php"
 sed -i '/^die;$/d' "$BOOTSTRAP_FILE"
 
 # More animation

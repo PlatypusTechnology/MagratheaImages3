@@ -18,7 +18,7 @@ Uses `docker-compose.session.yml` to create a fully isolated environment. Multip
 ### Start a session
 
 ```bash
-./docker-install.sh
+./scripts/docker-install.sh
 ```
 
 You will be prompted for:
@@ -44,18 +44,34 @@ The script will:
 
 Once done, the app is available at `http://localhost:<port>`.
 
-> **Note:** only `database/database.sql` is imported on a fresh install. Migration files (e.g. `database/migration-3.3.0.sql`) are intended for upgrading existing installations and should not be re-run on a clean database.
+> **Note:** only `database/database.sql` is imported on a fresh install. Migration files (e.g. `database/migrations/migration-3.3.0.sql`) are intended for upgrading existing installations and should not be re-run on a clean database.
 
-### Destroy a session
+If you run `./scripts/docker-install.sh` again with the name of a session that's stopped (but not destroyed), it skips every prompt and the schema import, and just brings the existing containers back up with the data intact.
+
+### Stop a session
 
 ```bash
-./docker-destroy.sh
+./scripts/docker-stop.sh
 ```
 
 Or pass the session name directly to skip the prompt:
 
 ```bash
-./docker-destroy.sh magrathea
+./scripts/docker-stop.sh magrathea
+```
+
+This stops the session's containers without deleting its volumes, data, or `docker/.env.<session>` file. Resume it later with `./scripts/docker-install.sh` (same session name) or a plain `docker compose -p <session> -f docker-compose.session.yml up -d`.
+
+### Destroy a session
+
+```bash
+./scripts/docker-destroy.sh
+```
+
+Or pass the session name directly to skip the prompt:
+
+```bash
+./scripts/docker-destroy.sh magrathea
 ```
 
 This will:
@@ -95,7 +111,7 @@ FLUSH PRIVILEGES;
 From the project root:
 
 ```bash
-bash install.sh
+bash scripts/install.sh
 ```
 
 You will be prompted for:
@@ -161,7 +177,11 @@ Example Apache virtual host:
 When upgrading an existing installation, run the relevant migration files against your database:
 
 ```bash
-mariadb -u <user> -p <database> < database/migration-3.3.0.sql
+mariadb -u <user> -p <database> < database/migrations/migration-3.3.0.sql
 ```
 
-Run migration files in order. Do not run them on a fresh install — `database.sql` already includes all schema changes up to the current version.
+Migrations live in `database/migrations/`. Run migration files in order. Do not run them on a fresh install — `database.sql` already includes all schema changes up to the current version.
+
+### Optional: R2 backup
+
+Copy `src/configs/r2.conf.sample` → `src/configs/r2.conf` and fill in the Cloudflare R2 account id, bucket and API token to enable a one-directional backup of `raw/` files to R2. Leave `enabled = false`, or leave the file absent entirely, to skip this — the app runs identically either way. See `future-plans/r2-backup-module.md` for the full setup procedure.

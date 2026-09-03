@@ -1,4 +1,16 @@
-# Changelog
+## 3.6.1
+2026-08-28
+- **improvement:** R2 backup state moved off the `images` table into two dedicated tables — `images_backup_status` (current state, one row per image, created lazily on the first push attempt) and `images_backup_attempts` (append-only, one row per push attempt, kept indefinitely so a retry that eventually succeeds no longer erases every prior failure for that image); `backed_up_at`/`backup_attempts`/`backup_error`/`backup_etag` are dropped from `images` (`database/migrations/migration-3.6.1-image-backup-history.sql`)
+
+## 3.6.0
+2026-08-21
+- **new:** uploaded images (via `/key/{private_key}/upload` and `/key/{private_key}/upload-url`) now have embedded metadata stripped before storage — EXIF/IPTC/XMP/comments for JPEG, tEXt/zTXt/iTXt/tIME/eXIf chunks for PNG, EXIF/XMP RIFF chunks for WEBP, comment extensions for GIF, and editor cruft (comments, `<metadata>`, Inkscape/Sodipodi namespaces) for SVG; done via structural byte/chunk editing rather than decode+re-encode, so pixel data is untouched — a JPEG's EXIF `Orientation` tag is preserved on its own when present so rotated photos still display correctly (`Images\MetadataStripper`)
+- **fix:** `FileManager::DeleteGeneratedPattern()` built a shell command by string concatenation and ran it via `shell_exec()`, letting unvalidated input from the admin `Pattern()` action execute arbitrary shell commands; replaced with `glob()`+`unlink()`, a regex allowlist matching the real `{id-or-uuid}_{addon}` shape generated filenames actually use (so admin patterns like `uuid_200*` for a specific size still work), and `realpath()` containment (also added to `DeleteFile()`)
+- **fix:** `MediaAdmin::Remove()` deleted an image via a GET request, which can never be safely protected by a CSRF token (a token embedded in a GET URL leaks via browser history, server/proxy logs, and `Referer` headers); moved to POST
+- **fix:** `GeneratedFileAdmin::Pattern()` had no error handling, so an invalid pattern's exception fell through to a MagratheaPHP2 framework path that renders the entire admin page again underneath the error; now caught and shown as a clean inline alert, matching `DeleteFile()`'s existing handling
+- **fix:** image objects in API responses were serialized by encoding every public property, so they carried two undocumented internal fields — `placeholder` and `accessId`, both per-request rendering flags — that were never part of the `Image` schema in `swagger.yaml`; `Images` now implements `JsonSerializable` with an explicit allowlist, so responses contain exactly the documented fields and no model property can leak into the API by being added later
+- **new:** `images` gains `backed_up_at`, `backup_attempts`, `backup_error` and `backup_etag` (`database/migrations/migration-3.6.0-image-backup.sql`), the state columns for the upcoming R2 raw-image backup module; they are written only by that module and are not exposed in the API
+- **improvement:** using Magrathea v.2.3.1 — the admin panel now enforces CSRF protection on every authenticated POST request, and a `HasPermission()` bypass in two admin dispatch paths (`Start::CheckFeature()`, the feature-subpage dispatch) is closed
 
 ## 3.5.1
 2026-08-09

@@ -3,10 +3,11 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-COMPOSE_FILE="$SCRIPT_DIR/docker-compose.session.yml"
-CONFIG_SAMPLE="$SCRIPT_DIR/src/configs/magrathea.conf.sample"
-CONFIG_FILE="$SCRIPT_DIR/src/configs/magrathea.conf"
-BOOTSTRAP_FILE="$SCRIPT_DIR/src/api/bootstrap.php"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+COMPOSE_FILE="$ROOT_DIR/docker-compose.session.yml"
+CONFIG_SAMPLE="$ROOT_DIR/src/configs/magrathea.conf.sample"
+CONFIG_FILE="$ROOT_DIR/src/configs/magrathea.conf"
+BOOTSTRAP_FILE="$ROOT_DIR/src/api/bootstrap.php"
 
 clear
 echo "--- MagratheaImages3 Docker Session Installer ---"
@@ -16,11 +17,31 @@ echo
 read -p "Session name [magrathea]: " SESSION
 SESSION=${SESSION:-magrathea}
 
-ENV_FILE="$SCRIPT_DIR/docker/.env.$SESSION"
+ENV_FILE="$ROOT_DIR/docker/.env.$SESSION"
 
-if docker compose -p "$SESSION" -f "$COMPOSE_FILE" ps -q 2>/dev/null | grep -q .; then
-    echo "Session '$SESSION' is already running. Use docker-destroy.sh to remove it first."
+if docker compose -p "$SESSION" -f "$COMPOSE_FILE" ps --status running -q 2>/dev/null | grep -q .; then
+    echo "Session '$SESSION' is already running. Use scripts/docker-stop.sh to stop it or scripts/docker-destroy.sh to remove it."
     exit 1
+fi
+
+# --- Resume a stopped-but-not-destroyed session ---
+if [ -f "$ENV_FILE" ]; then
+    echo "Session '$SESSION' already exists and is stopped. Resuming without reconfiguring..."
+    set -a
+    source "$ENV_FILE"
+    set +a
+    export SESSION
+    echo -n "Starting containers"
+    docker compose -p "$SESSION" -f "$COMPOSE_FILE" up -d --build --quiet-pull 2>&1 | while read -r line; do
+        echo -n "."
+    done
+    echo
+    echo
+    echo "================================================="
+    echo "  Session '$SESSION' resumed!"
+    echo "  App URL:       http://localhost:${APP_PORT:-8081}"
+    echo "================================================="
+    exit 0
 fi
 
 # --- App port ---
@@ -66,12 +87,13 @@ MYSQL_USER=$DB_USER
 MYSQL_PASSWORD=$DB_PASS
 JWT_SECRET=$JWT_SECRET
 SENTRY_DSN=$SENTRY_DSN
+APP_PORT=$APP_PORT
 EOF
 
 echo "Created session env: docker/.env.$SESSION"
 
 # --- Create required directories ---
-for DIR in "$SCRIPT_DIR/logs" "$SCRIPT_DIR/backups" "$SCRIPT_DIR/medias" "$SCRIPT_DIR/cache"; do
+for DIR in "$ROOT_DIR/logs" "$ROOT_DIR/backups" "$ROOT_DIR/medias" "$ROOT_DIR/cache"; do
     if [ ! -d "$DIR" ]; then
         mkdir -p "$DIR"
         echo "Created directory: $DIR"
@@ -131,7 +153,7 @@ echo " ready!"
 # --- Import schema ---
 echo "Importing database schema from database/database.sql..."
 docker compose -p "$SESSION" -f "$COMPOSE_FILE" exec -T mag_sql \
-    mariadb -u root -p"$DB_ROOT_PASS" "$DB_NAME" < "$SCRIPT_DIR/database/database.sql"
+    mariadb -u root -p"$DB_ROOT_PASS" "$DB_NAME" < "$ROOT_DIR/database/database.sql"
 echo "Schema imported."
 
 # --- Unlock bootstrap ---
@@ -146,5 +168,6 @@ echo "================================================="
 echo "  Session '$SESSION' is up!"
 echo "  App URL:       $APP_URL"
 echo "  Bootstrap:     $APP_URL/bootstrap.php"
-echo "  To stop:       ./docker-destroy.sh"
+echo "  To stop:       ./scripts/docker-stop.sh $SESSION"
+echo "  To destroy:    ./scripts/docker-destroy.sh $SESSION"
 echo "================================================="
