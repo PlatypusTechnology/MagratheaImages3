@@ -40,4 +40,57 @@ class ImagesApiTest extends TestCase
 			$this->assertEquals(4043, $e->getCode());
 		}
 	}
+
+	public function testCloneThrowsWhenPrivateKeyMissing()
+	{
+		$api = new ImagesApi();
+		try {
+			$api->Clone(["public_key" => "abc123def456", "image_uuid" => "9f8b7c6d-1234-4e56-9abc-1234567890ab"]);
+			$this->fail("Expected a MagratheaApiException to be thrown");
+		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+			$this->assertEquals(4005, $e->getCode());
+		}
+	}
+
+	public function testCloneThrowsWhenPublicKeyMissing()
+	{
+		$api = new ImagesApi();
+		try {
+			$api->Clone(["private_key" => "a1b2c3d4e5f6g7h8i9j0k1l2m", "image_uuid" => "9f8b7c6d-1234-4e56-9abc-1234567890ab"]);
+			$this->fail("Expected a MagratheaApiException to be thrown");
+		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+			$this->assertEquals(400, $e->getCode());
+		}
+	}
+
+	public function testCloneThrowsWhenImageUuidMissing()
+	{
+		$api = new ImagesApi();
+		try {
+			$api->Clone(["private_key" => "a1b2c3d4e5f6g7h8i9j0k1l2m", "public_key" => "abc123def456"]);
+			$this->fail("Expected a MagratheaApiException to be thrown");
+		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+			$this->assertEquals(400, $e->getCode());
+		}
+	}
+
+	public function testCloneDelegatesToServiceAndSurfacesNotFound()
+	{
+		// Under DatabaseSimulate every query returns an empty result, so
+		// ApikeyControl::GetByKey() never resolves the destination key --
+		// the same 4042 a real caller would see for an unknown private key.
+		// This exercises the wiring from ImagesApi::Clone() through to
+		// ImagesControl::CloneImage() rather than CloneImage() in isolation.
+		$api = new ImagesApi();
+		try {
+			$api->Clone([
+				"private_key" => "a1b2c3d4e5f6g7h8i9j0k1l2m",
+				"public_key" => "abc123def456",
+				"image_uuid" => "9f8b7c6d-1234-4e56-9abc-1234567890ab",
+			]);
+			$this->fail("Expected a MagratheaApiException to be thrown");
+		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+			$this->assertEquals(4042, $e->getCode());
+		}
+	}
 }

@@ -73,6 +73,7 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("GET", "key/:private_key/images", $api, "ViewImages", self::OPEN, "GET: subfolder=?");
 		$this->Add("GET", "key/:private_key/cached", $api, "GetCached", self::LOGGED);
 		$this->Add("POST", "key/create", $api, "NewKey", self::OPEN);
+		$this->Add("DELETE", "key/:private_key", $api, "Delete", self::OPEN, "GET: public_key (required)");
 	}
 
 	private function AddImages() {
@@ -82,6 +83,7 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Add("POST", "key/:private_key/upload", $api, "Upload", self::OPEN);
 		$this->Add("POST", "key/:private_key/upload-url", $api, "Upload", self::OPEN, "(private_key) post: [url]");
 		$this->Add("DELETE", "key/:private_key/delete/:id", $api, "Remove", self::OPEN);
+		$this->Add("POST", "key/:private_key/clone-from/:public_key/:image_uuid", $api, "Clone", self::OPEN);
 		$this->SecureImages();
 	}
 

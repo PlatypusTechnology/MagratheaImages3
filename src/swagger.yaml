@@ -8,7 +8,7 @@ info:
 
     Upload endpoints accept either a `private_key` in the POST body or the `private_key`
     in the URL path. Deletion also requires the private key.
-  version: "3.5.1"
+  version: "3.6.2"
 
 servers:
   - url: "{baseUrl}"
@@ -374,6 +374,36 @@ components:
                   type: boolean
                   description: Whether generated/resized variants were deleted
                   example: true
+
+    DeleteKeyResponse:
+      type: object
+      properties:
+        apikey:
+          type: boolean
+          description: Whether the `apikey` row was deleted
+          example: true
+        images_deleted:
+          type: integer
+          description: Number of image rows (and their files) that were removed
+          example: 12
+        folder:
+          type: string
+          description: Absolute path of the key's media folder that was targeted for removal
+          example: "/var/www/media/myfolder/"
+        folder_deleted:
+          type: boolean
+          description: Whether the media folder itself was fully removed
+          example: true
+        warnings:
+          type: array
+          description: |
+            Per-image or per-file cleanup failures (e.g. a raw file already missing
+            on disk). Non-empty warnings do not fail the request -- the database
+            rows are gone either way. Callers that care about complete disk cleanup
+            should log this even on a 200.
+          items:
+            type: string
+          example: []
 
     DebugResizeResponse:
       type: object
@@ -1107,6 +1137,148 @@ paths:
                 $ref: "#/components/schemas/ApiError"
         "403":
           description: "Key does not match image (code 4032)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /key/{private_key}:
+    delete:
+      tags: [upload]
+      summary: Delete an API key and all its images
+      description: |
+        Deletes the entire API key — every image row and file under it (raw + every
+        generated/resized variant), the key's whole media folder (catching anything
+        not tracked as an `images` row), and the `apikey` row itself. A single call
+        that fully replaces looping over `DELETE /key/{private_key}/delete/{id}` per
+        image.
+
+        Requires the **private key** in the path, same as every other image-mutating
+        route in this API. `public_key` is required too, but **as a query parameter**
+        rather than a path segment — deliberately, so this one call can't be
+        pattern-matched off its siblings without reading this. It is not a secondary
+        access-control gate (whoever holds `private_key` already has full capability
+        over the key); it's a "prove you meant to target this key" check.
+
+        A file-level failure on an individual image (e.g. a raw file already missing
+        on disk) does not fail the request — the database rows are the source of
+        truth for what's servable, and those are removed either way. Check
+        `warnings` in the response even on a 200 if complete disk cleanup matters to
+        the caller.
+
+        Idempotent: calling this on an already-deleted (or never-existing) private
+        key returns the same 404 (4042) as an unknown key — safe for a caller to
+        treat as "already gone, nothing to do."
+      operationId: deleteKey
+      parameters:
+        - name: private_key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Private key of the API key to delete
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m"
+        - name: public_key
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Public key of the same API key pair, confirming the caller meant to target this key
+          example: "abc123def456"
+      responses:
+        "200":
+          description: Deletion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteKeyResponse"
+        "400":
+          description: "`private_key` missing (code 4005)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Private key not found or already deleted (4042); `public_key` missing or not matching the private key's own public key (also 4042, indistinguishable on purpose)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /key/{private_key}/clone-from/{public_key}/{image_uuid}:
+    post:
+      tags: [upload]
+      summary: Clone an image into another key
+      description: |
+        Copies an image owned by `public_key` into the folder owned by `private_key`,
+        creating a new, independently-owned `images` row (own id/uuid/filename) and a
+        copy of the raw file. Generated/resized variants are not copied — they regenerate
+        lazily under the clone's own id/uuid, exactly like a freshly uploaded image.
+
+        `public_key` and `private_key` must not belong to the same API key pair.
+
+        Counts as a use of the destination key, same as an upload.
+      operationId: cloneImage
+      parameters:
+        - name: private_key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Private key of the destination key (the actor cloning)
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m"
+        - name: public_key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Public key of the source key that owns the image being cloned
+          example: "abc123def456"
+        - name: image_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the source image to clone
+          example: "9f8b7c6d-1234-4e56-9abc-1234567890ab"
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                subfolder:
+                  type: string
+                  description: Optional subfolder for the clone. Defaults to "cloned"; the source image's own subfolder is not carried over.
+      responses:
+        "200":
+          description: Clone result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadSuccessResponse"
+        "400":
+          description: "`private_key` missing (4005), `public_key` missing (400), or `image_uuid` missing (400)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: "Source and destination belong to the same key pair (4036); source image does not belong to `public_key` (4032); destination key usage limit reached (4033), expired (4034), or not active (4035)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: "Private key not found (4042); public key not found (4041); image not found (4043)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Source raw file missing on disk (5005), destination folder not writable (5003), or the file copy failed (5006)"
           content:
             application/json:
               schema:

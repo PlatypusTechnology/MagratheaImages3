@@ -35,5 +35,20 @@ class ImagesControlTest extends TestCase
 		$control->Remove('privateKey', 1);
 	}
 
+	public function testCloneImageThrowsWhenPrivateKeyNotFound()
+	{
+		// Under the mocked DatabaseSimulate, ApikeyControl::GetByKey() always
+		// resolves to nothing, so CloneImage() reports the same 4042 a real
+		// caller would see for an unknown destination private key.
+		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
+		try {
+			$control = new ImagesControl();
+			$control->CloneImage('privateKey', 'publicKey', '9f8b7c6d-1234-4e56-9abc-1234567890ab');
+		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+			$this->assertEquals(4042, $e->getCode());
+			throw $e;
+		}
+	}
+
 	// Add more tests for RemoveImage and RemoveRawFile as needed
 }

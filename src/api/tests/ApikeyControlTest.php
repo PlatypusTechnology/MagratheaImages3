@@ -104,4 +104,28 @@ class ApikeyControlTest extends \PHPUnit\Framework\TestCase {
 		$this->assertStringContainsString("folder does not exist", $warnings[0]);
 	}
 
+	public function testDeleteKeyThrowsApiKeyNotFoundForIdZero(): void {
+		// id=0 skips Apikey::GetById() entirely (it treats 0 as "empty"), so
+		// DeleteKey() reaches its own not-found guard and throws the 4044
+		// "Api key not found" MagratheaApiException -- this is the only path that
+		// still reaches that guard, since a real id always fails earlier (below).
+		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
+		try {
+			$control = new ApikeyControl();
+			$control->DeleteKey(0);
+		} catch(\Magrathea2\Exceptions\MagratheaApiException $e) {
+			$this->assertEquals(4044, $e->getCode());
+			throw $e;
+		}
+	}
+
+	public function testDeleteKeyThrowsWhenApikeyNotFound(): void {
+		// Under the mocked DatabaseSimulate every query returns an empty result,
+		// so `new Apikey($id)` for any non-zero id fails to find a row and throws
+		// -- the same exception any caller sees for a since-deleted or bogus id.
+		$this->expectException(\Magrathea2\Exceptions\MagratheaModelException::class);
+		$control = new ApikeyControl();
+		$control->DeleteKey(999);
+	}
+
 }

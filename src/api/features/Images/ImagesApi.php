@@ -274,6 +274,26 @@ class ImagesApi extends MagratheaApiControl {
 		}
 	}
 
+	public function Clone($params) {
+		try {
+			$privateKey = @$params["private_key"];
+			$publicKey  = @$params["public_key"];
+			$uuid       = @$params["image_uuid"];
+			if(!$privateKey) ErrorCodes::Instance()->ThrowException(4005);
+			if(!$publicKey)  ErrorCodes::Instance()->ThrowException(400, null, "public key is missing");
+			if(!$uuid)       ErrorCodes::Instance()->ThrowException(400, null, "image uuid is missing");
+
+			$post = $this->GetPost();
+			$subfolder = @$post["subfolder"];
+
+			return $this->service->CloneImage($privateKey, $publicKey, $uuid, $subfolder);
+		} catch(MagratheaApiException $e) {
+			throw $e;
+		} catch(\Exception $e) {
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
+		}
+	}
+
 	public function Remove($params) {
 		try {
 			$key = @$params["private_key"];

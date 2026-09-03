@@ -353,6 +353,83 @@ Add `?debug=1` to get a JSON description of the resize operation instead of the 
 
 ---
 
+## Workflow 7 — Clone an image to another key
+
+Copies an image owned by one key into the folder of another key, as a new,
+independently-owned image (own `id`/`uuid`/`filename`). Only the raw file is
+duplicated — generated/resized variants regenerate lazily under the clone's own id,
+exactly like a freshly uploaded image.
+
+```
+POST /key/{private_key}/clone-from/{public_key}/{image_uuid}
+```
+
+- `private_key` — the destination key doing the cloning (the actor).
+- `public_key` — the source key that owns the image being cloned.
+- `image_uuid` — UUID of the source image.
+- `subfolder` (optional POST field) — subfolder for the clone. The source image's own
+  subfolder is **not** carried over; if omitted, the clone lands in a default `"cloned"`
+  subfolder.
+
+**Guard rail:** `public_key` and `private_key` must not belong to the same API key pair
+(same `apikey` row) — that request fails with `4036`.
+
+Cloning counts as a use of the destination key, same as an upload (`uses` increments,
+subject to `usage_limit`).
+
+Response is the same `UploadSuccessResponse` wrapper as an upload:
+```json
+{
+  "success": true,
+  "data": {
+    "image": { "...cloned image, own id/uuid/filename..." },
+    "public_key": "<destination key's public_key>"
+  }
+}
+```
+
+---
+
+## Workflow 8 — Delete an entire key and all its images
+
+Deletes the API key itself and everything under it in one call — every image row and
+file (raw + generated/resized variants), the key's whole media folder, and the
+`apikey` row. Replaces looping over Workflow 5 per image.
+
+```
+DELETE /key/{private_key}?public_key={public_key}
+```
+
+- `private_key` — in the URL path, same as every other key-scoped route.
+- `public_key` — **as a query parameter**, not a path segment. This is the one
+  endpoint that breaks the path-segment convention every other credential in this
+  API follows — deliberately, so it can't be copied by pattern-matching a sibling
+  route. It isn't a second access-control gate (whoever holds `private_key` already
+  has full capability); it's a "prove you meant to target this key" check.
+
+Response:
+```json
+{
+  "apikey": true,
+  "images_deleted": 12,
+  "folder": "/var/www/media/myfolder/",
+  "folder_deleted": true,
+  "warnings": []
+}
+```
+
+`warnings` can be non-empty on an otherwise-200 response — a partial file-level
+failure (e.g. a raw file already missing on disk) does not fail the request, since
+the database rows are gone either way. Log `warnings` even on success if complete
+disk cleanup matters to you.
+
+**Idempotent:** calling this twice, or on an already-deleted/unknown `private_key`,
+returns `4042` cleanly — safe to treat as "already gone, nothing to do." A missing or
+incorrect `public_key` for an otherwise-valid `private_key` also returns `4042`,
+indistinguishable from "not found" on purpose.
+
+---
+
 ## Authentication
 
 Most endpoints are **open** (no auth required). Two endpoints require a Bearer token:
@@ -434,6 +511,8 @@ ever looks out of date.
 | `POST /key/{k}/upload` | `private_key` in URL path |
 | `POST /key/{k}/upload-url` | `private_key` in URL path |
 | `DELETE /key/{k}/delete/{id}` | `private_key` in URL path (numeric `id` only) |
+| `DELETE /key/{k}` | `private_key` in URL path + `public_key` as a query param (not path) |
+| `POST /key/{k}/clone-from/{k2}/{uuid}` | `private_key` (destination) in URL path + `public_key` (source) in URL path |
 | `GET /key/{k}/images` | `private_key` in URL path |
 | `GET /image/{k}/{id}/...` | `public_key` in URL path (`id` = numeric id or uuid) |
 

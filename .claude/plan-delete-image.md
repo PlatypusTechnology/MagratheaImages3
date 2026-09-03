@@ -63,6 +63,32 @@ already do. If you disagree and want deletion gated behind `secret` as well, say
 it's a one-line change to the route registration and API method, not an architectural
 one.
 
+## Extra verification: `public_key` required as a query param
+
+Confirmed by you: on top of the `private_key`-only model above, this endpoint also
+requires the key's `public_key` — but deliberately **not** as another path segment.
+
+`public_key` isn't a secret in this system — it's embedded in every public-facing
+image URL (`image/:public_key/:id`, `.../raw`, `.../thumb`, `.../preview/:size`, all
+`self::OPEN`), so requiring it here is not a real access-control gate; whoever holds
+`private_key` already has full capability regardless. It's a "prove you meant to
+target this key" check, not a security boundary — same spirit as `Clone()` already
+requiring both keys together, just applied to a single key's own pair here.
+
+The deliberate choice is the **shape**: every other identifier/credential in this API
+is a path segment (`key/:private_key/...`, `image/:public_key/...`,
+`key/:private_key/clone-from/:public_key/...`). This is the one endpoint where a
+caller can't pattern-match the shape off its siblings and blindly copy it — reading
+`public_key` from a query string instead is a deliberate outlier, forcing whoever
+integrates this route to actually read the docs for the one call that deletes
+everything under a key, rather than assume it. That's the entire justification: an
+intentional speed bump, not a stylistic slip.
+
+Consequence: unlike a path segment, a query param gets none of the router's free
+"required" enforcement — nothing stops the request from reaching `Delete()` with it
+missing. Validate it explicitly in code, the same way `NewKey()` manually checks
+`@$_POST["secret"]`.
+
 ## Changes
 
 ### 1. New route (`src/api/api.php`, inside `AddApikey()`)
@@ -80,6 +106,12 @@ collide with the existing per-image `key/:private_key/delete/:id` route and read
 ```php
 public function Delete($params) {
     $key = $this->_GetKey($params); // existing helper: 4042 if private_key not found
+    $publicKey = @$_GET["public_key"];
+    if(empty($publicKey) || $publicKey !== $key->public_key) {
+        // Same code as "private key not found" — a caller holding only the
+        // private_key gets no signal that it was otherwise valid.
+        ErrorCodes::Instance()->ThrowException(4042, null, @$params["private_key"]);
+    }
     try {
         return $this->service->DeleteKey($key->id);
     } catch(MagratheaApiException $e) {
@@ -91,8 +123,9 @@ public function Delete($params) {
 ```
 
 Same try/catch shape as the existing `Remove()` in `ImagesApi`. `_GetKey()` already
-throws `4042` ("Private key not found") for a missing/garbage key — no new error codes
-needed anywhere in this plan; every case is already covered by the existing conf.
+throws `4042` ("Private key not found") for a missing/garbage key, and the
+`public_key` check above reuses the same code — no new error codes needed anywhere in
+this plan; every case is already covered by the existing conf.
 
 ### 3. `ApikeyControl::DeleteKey()` — no changes needed
 
@@ -126,24 +159,36 @@ itself**, despite it being the single most destructive method in this codebase. 
   row is still gone (a missing file must not block the DB cleanup).
 - API-layer: `DELETE /key/:private_key` with a private_key that doesn't exist → `4042`,
   not a 500. Calling it twice in a row on a real key → second call also `4042`, cleanly.
+- API-layer: `DELETE /key/:private_key` on a real key with `public_key` missing from
+  the query string → `4042`. Same, with `public_key` present but wrong (e.g. another
+  key's public_key, or a garbage string) → `4042`. Both exercised by calling
+  `ApikeyApi::Delete($params)` directly with `$_GET["public_key"]` set (or unset)
+  beforehand, matching how `Clone()`'s existing tests call the API method directly
+  rather than simulating a full HTTP request.
 
 ### 6. `swagger.yaml`
 
 New `/key/{private_key}`: `delete:` entry, same section as the existing
 `/key/{private_key}/delete/{id}` (around line 1072). Document:
+- A required `public_key` query parameter, called out explicitly as **not** following
+  the path-segment convention every other credential in this API uses — deliberate,
+  so an integrator can't copy the shape from a sibling route without reading this.
 - Response shape: `{apikey, images_deleted, folder, folder_deleted, warnings}`.
 - **`warnings` can be non-empty on an otherwise-200 response** — a partial file-level
   failure doesn't fail the request, since the DB rows (source of truth for what's
   servable) are gone either way. Callers that care about complete disk cleanup should
   log `warnings` even on success — this is exactly what guia.lol's page-deletion audit
   log will do.
-- `4042` for an unknown/already-deleted private_key — safe to treat as "already gone."
+- `4042` for an unknown/already-deleted private_key, **or** a missing/incorrect
+  `public_key` for an otherwise-valid private_key — both indistinguishable on purpose,
+  safe to treat as "already gone / not authorized" the same way.
 
 ### 7. Versioning
 
-Per this repo's `claude.md`: bump `src/version`, add a `### new` entry to
-`src/changelog.md`, and update `src/swagger.yaml`'s top-level `version:` field —
-all three together.
+Ships **on the same 3.6.2** already staged for the clone feature, not a new bump —
+confirmed by you. `src/version` and `src/swagger.yaml`'s top-level `version:` field
+stay untouched; add this as a second `**new:**` bullet under the existing `## 3.6.2`
+heading in `src/changelog.md`, alongside the clone-endpoint entry already there.
 
 ## What this does NOT change
 
@@ -161,6 +206,9 @@ all three together.
 
 Once this ships, `guia.lol/api/.claude/plan-delete-page.md`'s `DeletePageCascade()`
 collapses its per-image loop (`CollectImageRefs` / `PurgeRemoteImages`) into a single
-call: `DELETE {images_api}/key/{page.images_private_key}` (via a new
-`ImagesService::DeleteKey()` wrapper), treating a `4042` response the same as success
-(already gone). I'll update that plan doc to reflect this once this one is confirmed.
+call: `DELETE {images_api}/key/{page.images_private_key}?public_key={page.images_public_key}`
+(via a new `ImagesService::DeleteKey()` wrapper). Both columns already exist on
+`pages` (`images_private_key`, `images_public_key` — `PageBase.php:13`, populated
+together at creation in `PageControl.php:212-213`), so no schema change is needed on
+that side either. Treat a `4042` response the same as success (already gone, or never
+had access). I'll update that plan doc to reflect this once this one is confirmed.

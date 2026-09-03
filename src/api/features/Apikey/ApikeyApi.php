@@ -62,6 +62,23 @@ class ApikeyApi extends MagratheaApiControl {
 
 	}
 
+	public function Delete($params = false) {
+		$key = $this->_GetKey($params);
+		$publicKey = @$_GET["public_key"];
+		if(empty($publicKey) || $publicKey !== $key->public_key) {
+			// Same code as "private key not found" -- a caller holding only the
+			// private_key gets no signal that it was otherwise valid.
+			ErrorCodes::Instance()->ThrowException(4042, null, @$params["private_key"]);
+		}
+		try {
+			return $this->service->DeleteKey($key->id);
+		} catch(MagratheaApiException $e) {
+			throw $e;
+		} catch(Exception $e) {
+			ErrorCodes::Instance()->ThrowException(5001, null, $e->getMessage());
+		}
+	}
+
 	// {"secret":<< api-secret >>, "folder":<< folder-name >>}
 	public function NewKey($params) {
 		$secret = ConfigApp::Instance()->Get("secret");
