@@ -1,6 +1,7 @@
 <?php
 namespace MagratheaImages3\R2;
 
+use AsyncAws\S3\Enum\StorageClass;
 use AsyncAws\S3\S3Client;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -65,6 +66,10 @@ class R2Client {
 				"Body" => $stream,
 				"ContentType" => $contentType,
 				"Metadata" => ["image-uuid" => $imageUuid],
+				// Pinned explicitly rather than inherited from the bucket default:
+				// Infrequent Access has no free tier and bills a full million-op
+				// unit for a single PUT, which an hourly push job always trips.
+				"StorageClass" => StorageClass::STANDARD,
 			]);
 			$etag = trim($result->getEtag() ?? "", "\"");
 		} finally {

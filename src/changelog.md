@@ -1,3 +1,7 @@
+## 3.6.3
+2026-09-28
+- **fix:** R2 backup uploads now set `StorageClass: STANDARD` explicitly instead of inheriting the bucket's default storage class; a bucket created with Infrequent Access as its default was billing the IA minimums (no free tier, usage rounded up to a full million-op unit — $9 Class A + $0.90 Class B for a handful of requests) on the hourly push job (`R2\R2Client::PutFile()`). Existing IA objects are not migrated by this change — reset `images_backup_status` and let the push re-upload them
+
 ## 3.6.2
 2026-09-03
 - **new:** `POST /key/{private_key}/clone-from/{public_key}/{image_uuid}` — copies an image owned by `public_key` into the folder owned by `private_key` as a new, independently-owned `images` row (own id/uuid/filename); only the raw file is duplicated, generated/resized variants regenerate lazily under the clone's own id, same as a fresh upload. `public_key` and `private_key` must not belong to the same API key pair (`4036`); cloning counts as a use of the destination key, same as an upload. An optional `subfolder` POST field overrides the default `"cloned"` destination subfolder — the source image's own subfolder is not carried over (`Images\ImagesControl::CloneImage()`)
