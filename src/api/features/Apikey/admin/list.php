@@ -2,7 +2,6 @@
 
 use Magrathea2\Admin\AdminElements;
 use Magrathea2\Admin\AdminManager;
-use MagratheaContacts\Apikey\Apikey;
 
 $elements = AdminElements::Instance();
 

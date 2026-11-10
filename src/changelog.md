@@ -1,3 +1,7 @@
+## 3.6.4
+2026-10-08
+- **fix:** removed a stray `use MagratheaContacts\Apikey\Apikey;` from the Apikey admin list view (`Apikey/admin/list.php`), copied over from the MagratheaContacts project; the alias was never used, so it had no runtime effect
+
 ## 3.6.3
 2026-09-28
 - **fix:** R2 backup uploads now set `StorageClass: STANDARD` explicitly instead of inheriting the bucket's default storage class; a bucket created with Infrequent Access as its default was billing the IA minimums (no free tier, usage rounded up to a full million-op unit — $9 Class A + $0.90 Class B for a handful of requests) on the hourly push job (`R2\R2Client::PutFile()`). Existing IA objects are not migrated by this change — reset `images_backup_status` and let the push re-upload them
