@@ -2,16 +2,18 @@
 
 namespace MagratheaImages3;
 
-use Magrathea2\Admin\AdminElements;
-use Magrathea2\Admin\AdminFeature;
-use Magrathea2\Admin\AdminUrls;
-use Magrathea2\Admin\iAdminFeature;
+use Magrathea\Admin\AdminElements;
+use Magrathea\Admin\AdminFeature;
+use Magrathea\Admin\AdminUrls;
+use Magrathea\Admin\iAdminFeature;
 use MagratheaImages3\Apikey\Apikey;
 use MagratheaImages3\Images\FileManager;
 use MagratheaImages3\Images\ImageViewer;
 use MagratheaImages3\Images\PathManager;
 
 class GeneratedFileAdmin extends AdminFeature implements iAdminFeature {
+	use AdminPostOnly;
+
 	public string $featureName = "Generated Files";
 	public string $featureId = "AdminGenerated";
 
@@ -74,6 +76,7 @@ class GeneratedFileAdmin extends AdminFeature implements iAdminFeature {
 	}
 
 	public function DeleteFile() {
+		$this->RefuseIfNotPost();
 		$apikey = $_POST["apikey"];
 		$file = "generated/".$_POST["file"];
 
@@ -88,6 +91,7 @@ class GeneratedFileAdmin extends AdminFeature implements iAdminFeature {
 	}
 
 	public function Pattern() {
+		$this->RefuseIfNotPost();
 		$key = $_POST["apikey"];
 		$pattern = $_POST["pattern"];
 		$title = "Deleting: ".$pattern;

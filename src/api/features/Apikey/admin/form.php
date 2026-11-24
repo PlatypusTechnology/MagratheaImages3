@@ -1,5 +1,5 @@
 <?php
-$form = new \Magrathea2\Admin\AdminForm();
+$form = new \Magrathea\Admin\AdminForm();
 $formData = [
 	[
 		"name" => "#ID:",

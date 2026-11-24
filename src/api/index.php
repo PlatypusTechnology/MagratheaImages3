@@ -9,9 +9,18 @@ if ($_uriQuery) {
 }
 unset($_uriQuery, $_uriParams);
 
-include("_inc.php");
-include("api.php");
-
-$api = new MagratheaImages3\MagratheaImagesApi();
+try {
+	require_once __DIR__."/_inc.php";
+	require_once __DIR__."/api.php";
+	$api = new MagratheaImages3\MagratheaImagesApi();
+} catch(\Throwable $ex) {
+	// never print the exception: it carries paths, SQL and config values
+	if(function_exists("Sentry\\captureException")) {
+		\Sentry\captureException($ex);
+	}
+	error_log((string) $ex);
+	http_response_code(500);
+	header("Content-Type: application/json");
+	die(json_encode(["success" => false, "message" => "Internal Server Error"]));
+}
 $api->Run();
-

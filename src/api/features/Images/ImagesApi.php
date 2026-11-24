@@ -2,10 +2,10 @@
 
 namespace MagratheaImages3\Images;
 
-use Magrathea2\Config;
-use Magrathea2\Exceptions\MagratheaApiException;
-use Magrathea2\Exceptions\MagratheaModelException;
-use Magrathea2\MagratheaApiControl;
+use Magrathea\Config;
+use Magrathea\Exceptions\MagratheaApiException;
+use Magrathea\Exceptions\MagratheaModelException;
+use Magrathea\MagratheaApiControl;
 use MagratheaImages3\Apikey\ApikeyControl;
 use MagratheaImages3\ErrorCodes;
 

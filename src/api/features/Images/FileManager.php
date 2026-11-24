@@ -2,8 +2,8 @@
 
 namespace MagratheaImages3\Images;
 
-use Magrathea2\Exceptions\MagratheaConfigException;
-use Magrathea2\MagratheaHelper;
+use Magrathea\Exceptions\MagratheaConfigException;
+use Magrathea\MagratheaHelper;
 use MagratheaImages3\Apikey\Apikey;
 
 class FileManager {
@@ -38,7 +38,7 @@ class FileManager {
 	public function DeleteFile(string $file): bool {
 		$dFile = $this->path.$file;
 		if(!file_exists($dFile)) {
-			throw new \Magrathea2\Exceptions\MagratheaException("file does not exists: [".$dFile."]");
+			throw new \Magrathea\Exceptions\MagratheaException("file does not exists: [".$dFile."]");
 		}
 		$this->assertWithinBasePath($dFile);
 		try {
@@ -54,7 +54,7 @@ class FileManager {
 		// "..._placeholder", etc.) and/or glob wildcards -- but nothing that could reach
 		// a shell or a path separator.
 		if (!preg_match('/^(\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_[A-Za-z0-9_.*-]+$/', $pattern)) {
-			throw new \Magrathea2\Exceptions\MagratheaException("invalid pattern: [".$pattern."]");
+			throw new \Magrathea\Exceptions\MagratheaException("invalid pattern: [".$pattern."]");
 		}
 
 		$generatedDir = realpath($this->path."generated");
@@ -83,7 +83,7 @@ class FileManager {
 		$base = realpath($this->path);
 		$real = realpath($resolvedPath);
 		if ($base === false || $real === false || strpos($real, $base.DIRECTORY_SEPARATOR) !== 0) {
-			throw new \Magrathea2\Exceptions\MagratheaException("path outside allowed folder: [".$resolvedPath."]");
+			throw new \Magrathea\Exceptions\MagratheaException("path outside allowed folder: [".$resolvedPath."]");
 		}
 	}
 

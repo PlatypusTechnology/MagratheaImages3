@@ -3,14 +3,14 @@
 namespace MagratheaImages3\Apikey;
 
 use Exception;
-use Magrathea2\ConfigApp;
-use Magrathea2\Exceptions\MagratheaApiException;
-use Magrathea2\MagratheaApiControl;
+use Magrathea\ConfigApp;
+use Magrathea\Exceptions\MagratheaApiException;
+use Magrathea\MagratheaApiControl;
 use MagratheaImages3\Apikey\Apikey;
 use MagratheaImages3\ErrorCodes;
 use MagratheaImages3\Images\ImagesControl;
 
-use function Magrathea2\now;
+use function Magrathea\now;
 
 class ApikeyApi extends MagratheaApiControl {
 

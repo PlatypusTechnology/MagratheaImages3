@@ -3,8 +3,8 @@
 namespace MagratheaImages3\Images;
 
 use GdImage;
-use Magrathea2\Config;
-use Magrathea2\Exceptions\MagratheaApiException;
+use Magrathea\Config;
+use Magrathea\Exceptions\MagratheaApiException;
 use MagratheaImages3\Apikey\ApikeyControl;
 use MagratheaImages3\ErrorCodes;
 use MagratheaImages3\Images\Images;

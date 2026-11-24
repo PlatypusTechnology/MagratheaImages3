@@ -1,6 +1,6 @@
 <?php
 
-use Magrathea2\Admin\AdminElements;
+use Magrathea\Admin\AdminElements;
 use MagratheaImages3\Apikey\CacheClassCreator;
 
 $cacheControl = new CacheClassCreator();

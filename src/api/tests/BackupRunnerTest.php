@@ -116,13 +116,13 @@ class BackupRunnerTest extends TestCase
 		mkdir($this->mediaDir."/folder1/raw", 0755, true);
 
 		if(self::$originalConfigs === null) {
-			self::$originalConfigs = \Magrathea2\Config::Instance()->GetConfig();
+			self::$originalConfigs = \Magrathea\Config::Instance()->GetConfig();
 		}
 	}
 
 	public function tearDown(): void
 	{
-		\Magrathea2\Config::Instance()->SetConfig(self::$originalConfigs);
+		\Magrathea\Config::Instance()->SetConfig(self::$originalConfigs);
 		R2Config::SetConfigRootForTests(null);
 		$this->rrmdir($this->scratchDir);
 	}
@@ -136,7 +136,7 @@ class BackupRunnerTest extends TestCase
 	{
 		$configs = self::$originalConfigs;
 		$configs["scripttest"]["medias_path"] = $this->mediaDir;
-		\Magrathea2\Config::Instance()->SetConfig($configs);
+		\Magrathea\Config::Instance()->SetConfig($configs);
 	}
 
 	private function rrmdir(string $dir): void

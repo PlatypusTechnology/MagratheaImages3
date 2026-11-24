@@ -2,14 +2,14 @@
 
 namespace MagratheaImages3;
 
-include("api.php");
-use Magrathea2\Tests\TestsManager;
-use Magrathea2\Admin\Admin;
-use Magrathea2\Admin\AdminMenu;
-use Magrathea2\Admin\Features\UserLogs\AdminFeatureUserLog;
-use Magrathea2\Admin\Features\ApiExplorer\ApiExplorer;
-use Magrathea2\Admin\Features\AppConfig\AdminFeatureAppConfig;
-use Magrathea2\Admin\Features\OpenApi\OpenApiAdmin;
+require_once __DIR__."/../api.php";
+use Magrathea\Tests\TestsManager;
+use Magrathea\Admin\Admin;
+use Magrathea\Admin\AdminMenu;
+use Magrathea\Admin\Features\UserLogs\AdminFeatureUserLog;
+use Magrathea\Admin\Features\ApiExplorer\ApiExplorer;
+use Magrathea\Admin\Features\AppConfig\AdminFeatureAppConfig;
+use Magrathea\Admin\Features\OpenApi\OpenApiAdmin;
 use MagratheaImages3\Apikey\ApikeyAdmin;
 use MagratheaImages3\Images\ImagesAdmin;
 use MagratheaImages3\MediaAdmin;
@@ -18,7 +18,7 @@ use MagratheaImages3\SwaggerAdmin;
 use MagratheaImages3\MagratheaImagesApi;
 use MagratheaImages3\R2\R2Admin;
 
-class MagratheaImagesAdmin extends Admin implements \Magrathea2\Admin\iAdmin {
+class MagratheaImagesAdmin extends Admin implements \Magrathea\Admin\iAdmin {
 	public function Initialize() {
 		$this->SetTitle("Magrathea Images Admin");
 		$this->SetPrimaryColor("#910e04");

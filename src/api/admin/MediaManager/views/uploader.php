@@ -8,8 +8,8 @@
 			<div class="col-8">
 				<form action="<?= $uploadApi ?>" class="dropzone mt-2" id="dropzone-upload"></form>
 				<?
-	use Magrathea2\Config;
-	use Magrathea2\Admin\AdminForm;
+	use Magrathea\Config;
+	use Magrathea\Admin\AdminForm;
 
 	$url = Config::Instance()->Get("app_url");
 	$form = new AdminForm();

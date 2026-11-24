@@ -7,7 +7,6 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.session.yml"
 CONFIG_SAMPLE="$ROOT_DIR/src/configs/magrathea.conf.sample"
 CONFIG_FILE="$ROOT_DIR/src/configs/magrathea.conf"
-BOOTSTRAP_FILE="$ROOT_DIR/src/api/bootstrap.php"
 
 clear
 echo "--- MagratheaImages3 Docker Session Installer ---"
@@ -156,18 +155,13 @@ docker compose -p "$SESSION" -f "$COMPOSE_FILE" exec -T mag_sql \
     mariadb -u root -p"$DB_ROOT_PASS" "$DB_NAME" < "$ROOT_DIR/database/database.sql"
 echo "Schema imported."
 
-# --- Unlock bootstrap ---
-if [ -f "$BOOTSTRAP_FILE" ]; then
-    sed -i '/^die;$/d' "$BOOTSTRAP_FILE"
-    echo "Unlocked: src/api/bootstrap.php"
-fi
-
 # --- Done ---
 echo
 echo "================================================="
 echo "  Session '$SESSION' is up!"
 echo "  App URL:       $APP_URL"
-echo "  Bootstrap:     $APP_URL/bootstrap.php"
+echo "  Admin:         $APP_URL/admin.php"
+echo "  First admin:   docker compose -p $SESSION -f docker-compose.session.yml exec magrathea_images php vendor/bin/magrathea admin:create-user <email>"
 echo "  To stop:       ./scripts/docker-stop.sh $SESSION"
 echo "  To destroy:    ./scripts/docker-destroy.sh $SESSION"
 echo "================================================="

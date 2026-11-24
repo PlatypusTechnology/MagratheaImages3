@@ -17,7 +17,7 @@ class ImageResizerTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testConstructorReadsExtensionAndRawFileFromImage(): void {
-		$mediasPath = rtrim(\Magrathea2\Config::Instance()->Get("medias_path"), "/");
+		$mediasPath = rtrim(\Magrathea\Config::Instance()->Get("medias_path"), "/");
 		$img = $this->buildImage();
 		$img->filename = "1_photo.jpg";
 		$resizer = new ImageResizer($img);
@@ -73,7 +73,7 @@ class ImageResizerTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testGetThumbSizeReadsFromAppConfig(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock(["thumb_size" => "150"]);
+		\Magrathea\ConfigApp::Instance()->Mock(["thumb_size" => "150"]);
 		$resizer = new ImageResizer($this->buildImage());
 		$this->assertEquals(150, $resizer->GetThumbSize());
 	}
@@ -84,13 +84,13 @@ class ImageResizerTest extends \PHPUnit\Framework\TestCase {
 	// So GetThumbSize()'s own default of 100 never kicks in under a mock with
 	// no "thumb_size" key -- intval(null) is 0.
 	public function testGetThumbSizeIsZeroWhenMockedWithoutValue(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock([]);
+		\Magrathea\ConfigApp::Instance()->Mock([]);
 		$resizer = new ImageResizer($this->buildImage());
 		$this->assertEquals(0, $resizer->GetThumbSize());
 	}
 
 	public function testAdjustPlaceholderShrinksDimensionsWhenPlaceholder(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock(["placeholder_size" => "0.4"]);
+		\Magrathea\ConfigApp::Instance()->Mock(["placeholder_size" => "0.4"]);
 		$resizer = (new ImageResizer($this->buildImage()))->SetDimensions(200, 100)->SetPlaceholder();
 		$resizer->AdjustPlaceholder();
 		$this->assertEquals(80, $resizer->width);
@@ -98,7 +98,7 @@ class ImageResizerTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testAdjustPlaceholderKeepsDimensionsWhenNotPlaceholder(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock(["placeholder_size" => "0.4"]);
+		\Magrathea\ConfigApp::Instance()->Mock(["placeholder_size" => "0.4"]);
 		$resizer = (new ImageResizer($this->buildImage()))->SetDimensions(200, 100);
 		$resizer->AdjustPlaceholder();
 		$this->assertEquals(200, $resizer->width);

@@ -1,12 +1,13 @@
 <?php
 namespace MagratheaImages3\Images;
 
-use Magrathea2\DB\Query;
-use Magrathea2\Exceptions\MagratheaApiException;
+use Magrathea\DB\Query;
+use Magrathea\Exceptions\MagratheaApiException;
 use MagratheaImages3\Apikey\ApikeyControl;
 use MagratheaImages3\ErrorCodes;
 
-class ImagesControl extends \MagratheaImages3\Images\Base\ImagesControlBase {
+class ImagesControl extends \Magrathea\MagratheaModelControl {
+	protected static $model = Images::class;
 
 	const DEFAULT_CLONE_SUBFOLDER = "cloned";
 

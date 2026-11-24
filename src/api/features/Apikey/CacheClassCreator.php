@@ -3,7 +3,7 @@ namespace MagratheaImages3\Apikey;
 
 use Exception;
 
-use function Magrathea2\now;
+use function Magrathea\now;
 
 class CacheClassCreator {
 

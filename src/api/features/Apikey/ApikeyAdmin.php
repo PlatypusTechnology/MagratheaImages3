@@ -3,13 +3,15 @@
 namespace MagratheaImages3\Apikey;
 
 use Exception;
-use Magrathea2\Admin\AdminElements;
-use Magrathea2\Admin\AdminFeature;
-use Magrathea2\Admin\AdminManager;
-use Magrathea2\Admin\iAdminFeature;
+use Magrathea\Admin\AdminElements;
+use Magrathea\Admin\AdminFeature;
+use Magrathea\Admin\AdminManager;
+use Magrathea\Admin\iAdminFeature;
+use MagratheaImages3\AdminPostOnly;
 use MagratheaImages3\Images\PathManager;
 
 class ApikeyAdmin extends AdminFeature implements iAdminFeature { 
+	use AdminPostOnly;
 
 	public string $featureName = "Api Keys";
 	public string $featureId = "AdminApikey";
@@ -50,6 +52,7 @@ class ApikeyAdmin extends AdminFeature implements iAdminFeature {
 	}
 
 	public function Create() {
+		$this->RefuseIfNotPost(true);
 		$id = @$_POST["id"];
 		$control = new ApikeyControl();
 		try {
@@ -87,6 +90,7 @@ class ApikeyAdmin extends AdminFeature implements iAdminFeature {
 	}
 
 	public function DeleteApikey() {
+		$this->RefuseIfNotPost(true);
 		$id = $_POST["id"];
 		$control = new ApikeyControl();
 		try {
@@ -109,6 +113,7 @@ class ApikeyAdmin extends AdminFeature implements iAdminFeature {
 	}
 
 	public function CreateCache() {
+		$this->RefuseIfNotPost();
 		$control = new CacheClassCreator();
 		$elements = AdminElements::Instance();
 		if($control->Generate()) {

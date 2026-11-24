@@ -1,7 +1,7 @@
 <?php
 
-use Magrathea2\Config;
-use Magrathea2\ConfigApp;
+use Magrathea\Config;
+use Magrathea\ConfigApp;
 use MagratheaImages3\Apikey\Apikey;
 
 include_once(__DIR__."/../_inc.php");

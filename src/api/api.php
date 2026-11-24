@@ -3,11 +3,11 @@
 namespace MagratheaImages3;
 
 use AuthApi;
-use Magrathea2\Config;
-use Magrathea2\DB\Database;
-use Magrathea2\Exceptions\MagratheaApiException;
-use Magrathea2\MagratheaApi;
-use Magrathea2\MagratheaPHP;
+use Magrathea\Config;
+use Magrathea\DB\Database;
+use Magrathea\Exceptions\MagratheaApiException;
+use Magrathea\MagratheaApi;
+use Magrathea\MagratheaPHP;
 use MagratheaImages3\Apikey\ApikeyApi;
 use MagratheaImages3\Images\ImagesApi;
 
@@ -22,7 +22,6 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->Initialize();
 	}
 	public function Initialize() {
-		\Magrathea2\MagratheaPHP::Instance()->StartDb();
 		$this->AllowAll();
 		$this->AddAcceptHeaders([
 			"Authorization",
@@ -55,7 +54,7 @@ class MagratheaImagesApi extends MagratheaApi {
 	}
 
 	private function SetAuth() {
-		$authApi = new \Magrathea2\MagratheaApiAuth();
+		$authApi = new \Magrathea\MagratheaApiAuth();
 		$this->BaseAuthorization($authApi, self::LOGGED);
 		$this->Add("GET", "token", $authApi, "GetTokenInfo", self::OPEN);
 //		$this->Add("POST", "login", $authApi, "Login", self::OPEN);
@@ -113,11 +112,23 @@ class MagratheaImagesApi extends MagratheaApi {
 		return parent::ReturnApiException($exception);
 	}
 
+	// `$status = 200` is deliberate: MagratheaPHP 3 defaults it to null (status derived from the
+	// code), but this API kept 2.x's HTTP 200 for unknown routes and non-ErrorCodes exceptions,
+	// and changing that is an API change for clients reading `success` in their success handler.
 	public function ReturnError($code = 500, $message = "", $data = null, $status = 200) {
 		if($code >= 500 && function_exists("Sentry\\captureMessage")) {
 			\Sentry\captureMessage($message ?: "Unknown API error (code {$code})", \Sentry\Severity::error());
 		}
 		return parent::ReturnError($code, $message, $data, $status);
+	}
+
+	// MagratheaPHP 3 catches PHP \Errors (TypeError, ...) thrown by an action and answers a JSON
+	// 500 itself; in 2.x they escaped as fatal errors, which Sentry's own error handler reported.
+	protected function ReturnInternalError(\Error $error) {
+		if(function_exists("Sentry\\captureException")) {
+			\Sentry\captureException($error);
+		}
+		return parent::ReturnInternalError($error);
 	}
 
 	private function Version() {

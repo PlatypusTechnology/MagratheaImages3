@@ -2,11 +2,11 @@
 
 namespace MagratheaImages3\Images;
 
-use Magrathea2\Config;
-use Magrathea2\ConfigApp;
-use Magrathea2\Singleton;
-use Magrathea2\MagratheaHelper;
-use Magrathea2\Logger;
+use Magrathea\Config;
+use Magrathea\ConfigApp;
+use Magrathea\Singleton;
+use Magrathea\MagratheaHelper;
+use Magrathea\Logger;
 
 
 class PathManager {

@@ -34,7 +34,7 @@ class FileManagerTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testSetPathThrowsWhenFolderDoesNotExist(): void {
-		$this->expectException(\Magrathea2\Exceptions\MagratheaConfigException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaConfigException::class);
 		(new FileManager())->SetPath($this->tmpDir."/does-not-exist");
 	}
 
@@ -64,7 +64,7 @@ class FileManagerTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testDeleteFileThrowsWhenFileDoesNotExist(): void {
-		$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaException::class);
 		(new FileManager())->SetPath($this->tmpDir)->DeleteFile("missing.jpg");
 	}
 
@@ -80,7 +80,7 @@ class FileManagerTest extends \PHPUnit\Framework\TestCase {
 		file_put_contents($outside, "x");
 		$manager = (new FileManager())->SetPath($this->tmpDir);
 		try {
-			$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+			$this->expectException(\Magrathea\Exceptions\MagratheaException::class);
 			$manager->DeleteFile("../".basename($outside));
 		} finally {
 			$this->assertFileExists($outside);
@@ -114,7 +114,7 @@ class FileManagerTest extends \PHPUnit\Framework\TestCase {
 		$canary = $this->tmpDir."/pwned";
 		$manager = (new FileManager())->SetPath($this->tmpDir);
 		try {
-			$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+			$this->expectException(\Magrathea\Exceptions\MagratheaException::class);
 			$manager->DeleteGeneratedPattern("123_*; touch ".$canary." #");
 		} finally {
 			$this->assertFileDoesNotExist($canary);
@@ -124,7 +124,7 @@ class FileManagerTest extends \PHPUnit\Framework\TestCase {
 	public function testDeleteGeneratedPatternRejectsTraversalPattern(): void {
 		mkdir($this->tmpDir."/generated");
 		$manager = (new FileManager())->SetPath($this->tmpDir);
-		$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaException::class);
 		$manager->DeleteGeneratedPattern("../*");
 	}
 

@@ -2,8 +2,8 @@
 
 namespace MagratheaImages3\R2;
 
-use Magrathea2\Admin\AdminFeature;
-use Magrathea2\Admin\iAdminFeature;
+use Magrathea\Admin\AdminFeature;
+use Magrathea\Admin\iAdminFeature;
 
 /**
  * Read-only admin status view for the R2 backup module. Renders "not

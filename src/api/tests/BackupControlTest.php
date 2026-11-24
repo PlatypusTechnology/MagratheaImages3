@@ -10,7 +10,7 @@ class BackupControlTest extends TestCase
 {
 	public function setUp(): void
 	{
-		\Magrathea2\DB\Database::MockClass(\Magrathea2\DB\DatabaseSimulate::Instance());
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
 	}
 
 	public function testGetPendingReturnsArray()

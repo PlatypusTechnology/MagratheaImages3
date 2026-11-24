@@ -14,7 +14,7 @@ class ImagesControlTest extends TestCase
 		// idempotent: once Database::Instance() has been swapped for a
 		// DatabaseSimulate by any test in the suite, calling ->Mock() on it again
 		// would fail since DatabaseSimulate has no Mock() method.
-		\Magrathea2\DB\Database::MockClass(\Magrathea2\DB\DatabaseSimulate::Instance());
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
 	}
 
 	public function testGetLastReturnsArray()
@@ -30,7 +30,7 @@ class ImagesControlTest extends TestCase
 		// Under the mocked DatabaseSimulate every query returns an empty
 		// result, so GetById() always fails to find a row -- this is the
 		// exception any caller actually observes in that situation.
-		$this->expectException(\Magrathea2\Exceptions\MagratheaModelException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaModelException::class);
 		$control = new ImagesControl();
 		$control->Remove('privateKey', 1);
 	}
@@ -40,11 +40,11 @@ class ImagesControlTest extends TestCase
 		// Under the mocked DatabaseSimulate, ApikeyControl::GetByKey() always
 		// resolves to nothing, so CloneImage() reports the same 4042 a real
 		// caller would see for an unknown destination private key.
-		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaApiException::class);
 		try {
 			$control = new ImagesControl();
 			$control->CloneImage('privateKey', 'publicKey', '9f8b7c6d-1234-4e56-9abc-1234567890ab');
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(4042, $e->getCode());
 			throw $e;
 		}

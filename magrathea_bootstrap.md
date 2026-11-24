@@ -1,3 +1,5 @@
+> **Historical.** This is the MagratheaPHP **2** project tutorial. Since 3.7.0 this project runs on MagratheaPHP 3 (`platypustechnology/magratheaphp`, namespace `Magrathea`): see [`migration.md`](migration.md) and `src/vendor/platypustechnology/magratheaphp/docs/mds/index.md`.
+
 # Magrathea V2
 
 ## starting a Magrathea Project

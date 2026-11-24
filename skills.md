@@ -206,8 +206,8 @@ File upload (`/upload`, `/key/:private_key/upload`) returns:
       "file_type": "image/jpeg",
       "size": 204800,
       "upload_key": "7",
-      "created_at": "2025-06-01T12:00:00",
-      "updated_at": "2025-06-01T12:00:00"
+      "created_at": null,
+      "updated_at": null
     },
     "public_key": "abc123def456"
   }
@@ -215,6 +215,8 @@ File upload (`/upload`, `/key/:private_key/upload`) returns:
 ```
 
 All upload endpoints — file and URL — return the same `UploadSuccessResponse` wrapper above.
+
+`created_at`/`updated_at` are `null` in upload, upload-url and clone-from responses (since 3.7.0, the API doesn't read the new row back). Fetch `GET /image/:public_key/:id/details` if you need the stored timestamps.
 
 **Always check `success: true`** before using `data.image`.
 

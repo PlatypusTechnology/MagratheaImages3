@@ -9,4 +9,4 @@ require_once __DIR__."/../_inc.php";
 // which doesn't exist outside the app container. Both behaviors turn expected,
 // caught-in-test exceptions into a hard process exit. NONE disables both, which
 // is what unit tests need: exceptions should be catchable, not fatal.
-\Magrathea2\Debugger::Instance()->SetType(\Magrathea2\Debugger::NONE);
+\Magrathea\Debugger::Instance()->SetType(\Magrathea\Debugger::NONE);

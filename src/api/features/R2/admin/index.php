@@ -1,6 +1,6 @@
 <?php
 
-use Magrathea2\Admin\AdminElements;
+use Magrathea\Admin\AdminElements;
 
 $elements = AdminElements::Instance();
 $elements->Header("R2 Backup");

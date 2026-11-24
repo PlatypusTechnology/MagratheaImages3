@@ -1,10 +1,10 @@
 <?php
-// CLI entrypoint for the R2 backup module. Must run with cwd = src/api --
-// `_inc.php`'s includes (../vendor/autoload.php, sentry.php, shared/Helper.php)
-// are relative to the working directory, which cron does not set the way the
-// web server and phpunit do.
+// CLI entrypoint for the R2 backup module. `_inc.php` anchors its own paths on
+// __DIR__ and connects the database; the chdir() keeps any other relative path
+// resolving from src/api, as it does for the web server and phpunit (cron
+// starts in $HOME).
 chdir(__DIR__);
-require "_inc.php";
+require __DIR__."/_inc.php";
 
 use MagratheaImages3\R2\BackupRunner;
 use MagratheaImages3\R2\R2Config;
@@ -16,8 +16,6 @@ if(!R2Config::IsEnabled()) {
 	if($verbose) fwrite(STDOUT, "R2 backup disabled, nothing to do.\n");
 	exit(0);
 }
-
-\Magrathea2\MagratheaPHP::Instance()->StartDB();
 
 $runner = new BackupRunner();
 

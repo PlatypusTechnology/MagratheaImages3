@@ -2,12 +2,12 @@
 
 namespace MagratheaImages3;
 
-use Magrathea2\Config;
-use Magrathea2\ConfigApp;
-use Magrathea2\DB\Database;
-use Magrathea2\MagratheaApiControl;
-use Magrathea2\MagratheaHelper;
-use Magrathea2\MagratheaPHP;
+use Magrathea\Config;
+use Magrathea\ConfigApp;
+use Magrathea\DB\Database;
+use Magrathea\MagratheaApiControl;
+use Magrathea\MagratheaHelper;
+use Magrathea\MagratheaPHP;
 use MagratheaImages3\Images\ImageUploader;
 
 class SystemApi extends MagratheaApiControl {
@@ -82,9 +82,8 @@ class SystemApi extends MagratheaApiControl {
 
 	private function CheckDatabase(): string {
 		try {
-			$database = Database::Instance();
-			$database->OpenConnectionPlease();
-			$database->CloseConnectionThanks();
+			// one connection per request: it opens here (or is reused) and closes at the end of the request
+			Database::Instance()->OpenConnectionPlease();
 			return "ok";
 		} catch(\Throwable $e) {
 			return "fail";

@@ -4,16 +4,16 @@ namespace MagratheaImages3\Images;
 
 use Exception;
 use GdImage;
-use Magrathea2\Admin\Features\AppConfig\AppConfig;
-use Magrathea2\Config;
-use Magrathea2\ConfigApp;
-use Magrathea2\Exceptions\MagratheaApiException;
-use Magrathea2\Exceptions\MagratheaException;
+use Magrathea\Admin\Features\AppConfig\AppConfig;
+use Magrathea\Config;
+use Magrathea\ConfigApp;
+use Magrathea\Exceptions\MagratheaApiException;
+use Magrathea\Exceptions\MagratheaException;
 use MagratheaImages3\ErrorCodes;
 use MagratheaImages3\Helper;
 use MagratheaImages3\Images\Images;
 
-use function Magrathea2\p_r;
+use function Magrathea\p_r;
 
 class ImageResizer {
 

@@ -1,9 +1,9 @@
 <?php
 namespace MagratheaImages3\R2;
 
-use Magrathea2\Config;
-use Magrathea2\ConfigFile;
-use Magrathea2\MagratheaPHP;
+use Magrathea\Config;
+use Magrathea\ConfigFile;
+use Magrathea\MagratheaPHP;
 
 class R2Config {
 

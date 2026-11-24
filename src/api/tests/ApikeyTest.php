@@ -8,7 +8,7 @@ class ApikeyTest extends \PHPUnit\Framework\TestCase {
 
 	protected function setUp(): void {
 		// IncrementUses() calls Update() against the DB.
-		\Magrathea2\DB\Database::MockClass(\Magrathea2\DB\DatabaseSimulate::Instance());
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
 		parent::setUp();
 	}
 
@@ -121,7 +121,7 @@ class ApikeyTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testGetDestinationFolderUsesFolderProperty(): void {
-		$mediasPath = rtrim(\Magrathea2\Config::Instance()->Get("medias_path"), "/");
+		$mediasPath = rtrim(\Magrathea\Config::Instance()->Get("medias_path"), "/");
 		$k = new Apikey();
 		$k->folder = "my-folder";
 		$this->assertEquals($mediasPath."/my-folder/", $k->GetDestinationFolder());

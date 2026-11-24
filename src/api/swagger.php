@@ -1,7 +1,7 @@
 <?php
 require __DIR__."/../vendor/autoload.php";
 
-use Magrathea2\Config;
+use Magrathea\Config;
 
 Config::Instance()->SetPath(__DIR__."/../configs");
 

@@ -40,9 +40,8 @@ The script will:
 2. Write `src/configs/magrathea.conf` with the session environment block
 3. Build and start the containers (`mag_sql` + `magrathea_images`)
 4. Wait for the database to be healthy, then import `database/database.sql`
-5. Remove the `die;` guard from `src/api/bootstrap.php`
 
-Once done, the app is available at `http://localhost:<port>`.
+Once done, the app is available at `http://localhost:<port>`. Create the first admin user with the command the script prints at the end (`vendor/bin/magrathea admin:create-user <email>`, run inside the app container); it prints a generated password once.
 
 > **Note:** only `database/database.sql` is imported on a fresh install. Migration files (e.g. `database/migrations/migration-3.3.0.sql`) are intended for upgrading existing installations and should not be re-run on a clean database.
 
@@ -89,7 +88,7 @@ Uses `install.sh` to configure the project directly on the host server. PHP, Apa
 
 ### Requirements
 
-- PHP 8.1+
+- PHP 8.1+ with `mysqli`, `gd` and `fileinfo`, and `short_open_tag = On` (the admin's views open PHP with `<?`)
 - Composer
 - Apache or nginx with rewrite/alias support
 - MariaDB or MySQL — database and user created beforehand
@@ -134,7 +133,6 @@ The script will:
 1. Create any missing directories (logs, backups, medias, cache)
 2. Generate a random JWT key
 3. Copy `src/configs/magrathea.conf.sample` → `src/configs/magrathea.conf` and write the environment block
-4. Remove the `die;` guard from `src/api/bootstrap.php`, which blocks the app until installation is complete
 
 ### Finish setup
 
@@ -152,9 +150,15 @@ cd src && composer install
 mariadb -u <user> -p <database> < database/database.sql
 ```
 
-**3. Run the web bootstrap:**
+**3. Create the first admin user:**
 
-Open `<APP_URL>/bootstrap.php` in your browser. This finalizes the framework configuration.
+```bash
+cd src && vendor/bin/magrathea admin:create-user <email>
+```
+
+It works only while the admin has no users, and prints a generated password once. Then check the install: `vendor/bin/magrathea check` must report no ERROR (it checks the config, the folders, the database connection, the timezone sync and the schema).
+
+The browser alternative is the setup wizard, `<APP_URL>/setup.php` (MagratheaPHP 3). Once a config exists it answers 403 unless the active environment has `bootstrap_unlocked = true`, and every visit asks for the token it writes to `src/configs/.setup-token`. Its last step removes the flag again.
 
 **4. Point your web server document root to `src/api/`.**
 
@@ -174,7 +178,7 @@ Example Apache virtual host:
 
 ### Applying migrations
 
-When upgrading an existing installation, run the relevant migration files against your database:
+Upgrading an existing installation: follow [`docs/migration.md`](docs/migration.md). It lists, per starting version, the migration files to run and the checks each instance needs (3.7.0 moved the app to MagratheaPHP 3). The SQL files run like this:
 
 ```bash
 mariadb -u <user> -p <database> < database/migrations/migration-3.3.0.sql

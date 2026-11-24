@@ -2,15 +2,16 @@
 namespace MagratheaImages3\Apikey;
 
 use Exception;
-use Magrathea2\ConfigApp;
-use Magrathea2\DB\Database;
-use Magrathea2\DB\Query;
-use Magrathea2\Errors\ErrorManager;
+use Magrathea\ConfigApp;
+use Magrathea\DB\Database;
+use Magrathea\DB\Query;
+use Magrathea\Errors\ErrorManager;
 use MagratheaImages3\ErrorCodes;
 use MagratheaImages3\Images\ImagesControl;
 use MagratheaImages3\Images\PathManager;
 
-class ApikeyControl extends \MagratheaImages3\Apikey\Base\ApikeyControlBase {
+class ApikeyControl extends \Magrathea\MagratheaModelControl {
+	protected static $model = Apikey::class;
 
 	public function initializeKeys(Apikey &$key) {
 		if(empty($key->private_key)) {

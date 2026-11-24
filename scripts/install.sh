@@ -84,11 +84,6 @@ for i in {1..5}; do
 done
 echo
 sleep 0.5
-echo -e "\n\n\033[1;36m✨ Creating bootstrap file... ✨\033[0m\n"
-
-# Remove 'die;' from bootstrap.php
-BOOTSTRAP_FILE="$ROOT_DIR/src/api/bootstrap.php"
-sed -i '/^die;$/d' "$BOOTSTRAP_FILE"
 
 # More animation
 echo -n "Finalizing"
@@ -102,4 +97,9 @@ echo -e "\n\n\033[1;32m✅ Installation complete!\033[0m\n"
 echo -e "To finish setup:\n"
 echo -e "1. Run \033[1;33mcomposer install\033[0m inside the src folder:"
 echo -e "   cd src && composer install\n"
-echo -e "2. Point your browser to: \033[1;34m$APP_URL/bootstrap.php\033[0m\n"
+echo -e "2. Import the schema:"
+echo -e "   mariadb -u $DB_USER -p $DB_NAME < database/database.sql\n"
+echo -e "3. Create the first admin user (prints a generated password once):"
+echo -e "   cd src && vendor/bin/magrathea admin:create-user <email>\n"
+echo -e "4. Check the install (must report no ERROR):"
+echo -e "   cd src && vendor/bin/magrathea check\n"

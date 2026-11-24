@@ -9,7 +9,7 @@ class ApikeyApiTest extends TestCase
 {
 	public function setUp(): void
 	{
-		\Magrathea2\DB\Database::MockClass(\Magrathea2\DB\DatabaseSimulate::Instance());
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
 	}
 
 	public function tearDown(): void
@@ -23,7 +23,7 @@ class ApikeyApiTest extends TestCase
 		try {
 			$api->Delete(["private_key" => ""]);
 			$this->fail("Expected a MagratheaApiException to be thrown");
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(4005, $e->getCode());
 		}
 	}
@@ -38,7 +38,7 @@ class ApikeyApiTest extends TestCase
 		try {
 			$api->Delete(["private_key" => "a1b2c3d4e5f6g7h8i9j0k1l2m"]);
 			$this->fail("Expected a MagratheaApiException to be thrown");
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(4042, $e->getCode());
 		}
 	}
@@ -56,7 +56,7 @@ class ApikeyApiTest extends TestCase
 		try {
 			$api->Delete(["private_key" => "a1b2c3d4e5f6g7h8i9j0k1l2m"]);
 			$this->fail("Expected a MagratheaApiException to be thrown");
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(4042, $e->getCode());
 		}
 	}

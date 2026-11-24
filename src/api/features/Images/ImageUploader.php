@@ -2,13 +2,13 @@
 
 namespace MagratheaImages3\Images;
 
-use Magrathea2\Exceptions\MagratheaApiException;
+use Magrathea\Exceptions\MagratheaApiException;
 use MagratheaImages3\Apikey\Apikey;
-use Magrathea2\Exceptions\MagratheaException;
-use Magrathea2\MagratheaHelper;
-use Magrathea2\Logger;
+use Magrathea\Exceptions\MagratheaException;
+use Magrathea\MagratheaHelper;
+use Magrathea\Logger;
 use MagratheaImages3\ErrorCodes;
-use Magrathea2\ConfigApp;
+use Magrathea\ConfigApp;
 
 class ImageUploader {
 

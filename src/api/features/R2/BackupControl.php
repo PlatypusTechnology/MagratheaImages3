@@ -1,7 +1,7 @@
 <?php
 namespace MagratheaImages3\R2;
 
-use Magrathea2\DB\Database;
+use Magrathea\DB\Database;
 use MagratheaImages3\Images\Images;
 use MagratheaImages3\Images\ImagesControl;
 

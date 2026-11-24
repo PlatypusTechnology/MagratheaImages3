@@ -1,6 +1,5 @@
 [general]
 	use_environment = "dev"
-	time_zone = "America/Sao_Paulo"
 
 [dev]
 	db_host = "mag_sql"
@@ -31,3 +30,7 @@
 	jwt_key = ""
 	webp_quick_access = true
 	force_uuid = false
+	; MagratheaPHP 3 sets MySQL's session time_zone to `timezone` on every connection. If this
+	; server's MySQL runs in another zone, existing TIMESTAMP values (created_at/updated_at) read
+	; back shifted: keep them as before with db_sync_timezone = false (see migration.md)
+	; db_sync_timezone = false

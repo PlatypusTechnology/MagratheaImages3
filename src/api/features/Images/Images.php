@@ -1,7 +1,38 @@
 <?php
 namespace MagratheaImages3\Images;
 
-class Images extends \MagratheaImages3\Images\Base\ImagesBase implements \JsonSerializable {
+use Magrathea\DB\Database;
+use Magrathea\MagratheaModel;
+use MagratheaImages3\Apikey\Apikey;
+
+class Images extends MagratheaModel implements \JsonSerializable {
+
+	protected $dbTable = "images";
+	protected $dbPk = "id";
+	protected $dbValues = [
+		"id" => "int",
+		"uuid" => "uuid",
+		"name" => "string",
+		"filename" => "string",
+		"extension" => "string",
+		"folder" => "string",
+		"subfolder" => "string",
+		"width" => "int",
+		"height" => "int",
+		"file_type" => "string",
+		"size" => "int",
+		"upload_key" => "string",
+	];
+	// the CRUD admin (ImagesAdmin) shows upload_key as a select of api keys
+	protected $relations = [
+		"external" => ["upload_key" => "\\MagratheaImages3\\Apikey\\Apikey"],
+	];
+	// MagratheaPHP 3 defaults to strict types (int/bool fields as native JSON types); pinned off so
+	// the API keeps 2.x's string values. Removing it is an API change: see docs/migration.md.
+	protected $strictTypes = false;
+
+	// created_at/updated_at are declared by MagratheaModel and owned by the database
+	public $id, $uuid, $name, $filename, $extension, $folder, $subfolder, $width, $height, $file_type, $size, $upload_key;
 
 	public bool $placeholder = false;
 
@@ -19,10 +50,9 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase implements \JsonSe
 	 * The API json_encode()s models directly, which would otherwise emit every public
 	 * property, including the internal render flags `placeholder`/`accessId`.
 	 *
-	 * This is deliberately an explicit list rather than `ToArray()`. `ToArray()` merges
-	 * `relations["properties"]`, which holds the lazy-loaded `Apikey` -- and `Apikey`
-	 * exposes `private_key` as a public property. An allowlist can only ever emit what
-	 * is written here.
+	 * This is deliberately an explicit list rather than `ToArray()` or the public properties:
+	 * an allowlist can only ever emit what is written here (`Apikey`, reachable through
+	 * `GetApikey()`, exposes `private_key` as a public property).
 	 */
 	public function jsonSerialize(): mixed {
 		return [
@@ -41,6 +71,13 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase implements \JsonSe
 			"created_at" => $this->created_at,
 			"updated_at" => $this->updated_at,
 		];
+	}
+
+	/**
+	 * The api key this image was uploaded with (one query per call)
+	 */
+	public function GetApikey(): Apikey {
+		return new Apikey($this->upload_key);
 	}
 
 	public function SetPlaceholder(): Images {
@@ -99,9 +136,19 @@ class Images extends \MagratheaImages3\Images\Base\ImagesBase implements \JsonSe
 	 * @return  Images
 	 */
 	public function SetFilename($name): Images {
-		$nextId = $this->GetNextID();
+		$nextId = $this->NextAutoIncrement();
 		$this->filename = $nextId."_".$name;
 		return $this;
+	}
+
+	/**
+	 * The `images` table's next auto-increment value: what MagratheaPHP 2's `GetNextID()` returned
+	 * (removed in 3.0). Raw files are stored as "{id}_{name}", so this keeps that naming.
+	 * Racy by nature (two concurrent uploads can read the same value), as it always was.
+	 */
+	private function NextAutoIncrement() {
+		$data = Database::Instance()->QueryRow("SHOW TABLE STATUS LIKE '".$this->dbTable."'");
+		return $data["auto_increment"] ?? null;
 	}
 
 	public function GetRawFile(): string {

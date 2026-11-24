@@ -1,6 +1,6 @@
 <?php
 
-use Magrathea2\Config;
+use Magrathea\Config;
 use MagratheaImages3\Images\PathManager;
 
 include_once(__DIR__."/../_inc.php");

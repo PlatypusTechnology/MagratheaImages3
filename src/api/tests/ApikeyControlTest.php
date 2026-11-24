@@ -9,7 +9,7 @@ class ApikeyControlTest extends \PHPUnit\Framework\TestCase {
 	private string $tmpDir;
 
 	protected function setUp(): void {
-		\Magrathea2\DB\Database::MockClass(\Magrathea2\DB\DatabaseSimulate::Instance());
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
 		$this->tmpDir = sys_get_temp_dir()."/apikeycontrol-test-".uniqid();
 		mkdir($this->tmpDir, 0755, true);
 		parent::setUp();
@@ -109,11 +109,11 @@ class ApikeyControlTest extends \PHPUnit\Framework\TestCase {
 		// DeleteKey() reaches its own not-found guard and throws the 4044
 		// "Api key not found" MagratheaApiException -- this is the only path that
 		// still reaches that guard, since a real id always fails earlier (below).
-		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaApiException::class);
 		try {
 			$control = new ApikeyControl();
 			$control->DeleteKey(0);
-		} catch(\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch(\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(4044, $e->getCode());
 			throw $e;
 		}
@@ -123,7 +123,7 @@ class ApikeyControlTest extends \PHPUnit\Framework\TestCase {
 		// Under the mocked DatabaseSimulate every query returns an empty result,
 		// so `new Apikey($id)` for any non-zero id fails to find a row and throws
 		// -- the same exception any caller sees for a since-deleted or bogus id.
-		$this->expectException(\Magrathea2\Exceptions\MagratheaModelException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaModelException::class);
 		$control = new ApikeyControl();
 		$control->DeleteKey(999);
 	}

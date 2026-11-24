@@ -1,7 +1,7 @@
 <?php
 namespace MagratheaImages3\R2;
 
-use Magrathea2\Config;
+use Magrathea\Config;
 use MagratheaImages3\Images\Images;
 use MagratheaImages3\Images\PathManager;
 use Sentry\CheckInStatus;

@@ -8,17 +8,17 @@ include_once(__DIR__."/../_inc.php");
 class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 
 	public function testSetFileThrowsOnEmptyArray(): void {
-		$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaException::class);
 		(new ImageUploader())->SetFile([]);
 	}
 
 	public function testSetFileThrowsOnIniSizeError(): void {
-		$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaException::class);
 		(new ImageUploader())->SetFile(["name" => "a.jpg", "size" => 0, "tmp_name" => "", "error" => UPLOAD_ERR_INI_SIZE]);
 	}
 
 	public function testSetFileThrowsOnFormSizeError(): void {
-		$this->expectException(\Magrathea2\Exceptions\MagratheaException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaException::class);
 		(new ImageUploader())->SetFile(["name" => "a.jpg", "size" => 0, "tmp_name" => "", "error" => UPLOAD_ERR_FORM_SIZE]);
 	}
 
@@ -36,7 +36,7 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testValidateExtensionRejectsDisallowedExtension(): void {
-		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaApiException::class);
 		(new ImageUploader())->ValidateExtension("exe");
 	}
 
@@ -65,7 +65,7 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testValidateMimeRejectsUnknownType(): void {
-		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaApiException::class);
 		(new ImageUploader())->ValidateMime("plain text content, not an image at all");
 	}
 
@@ -77,32 +77,32 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testGetMaximumFileUploadSizeReturnsInt(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock([]);
+		\Magrathea\ConfigApp::Instance()->Mock([]);
 		$this->assertIsInt(ImageUploader::getMaximumFileUploadSize());
 		$this->assertGreaterThan(0, ImageUploader::getMaximumFileUploadSize());
 	}
 
 	public function testGetMaximumFileUploadSizeUsesValidOverrideWhenSmaller(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => "1K"]);
+		\Magrathea\ConfigApp::Instance()->Mock(["max_upload_size" => "1K"]);
 		$this->assertEquals(1024, ImageUploader::getMaximumFileUploadSize());
 	}
 
 	public function testGetMaximumFileUploadSizeIgnoresOverrideLargerThanPhpLimit(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock([]);
+		\Magrathea\ConfigApp::Instance()->Mock([]);
 		$phpLimit = ImageUploader::getMaximumFileUploadSize();
-		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => (string)($phpLimit + 1024)]);
+		\Magrathea\ConfigApp::Instance()->Mock(["max_upload_size" => (string)($phpLimit + 1024)]);
 		$this->assertEquals($phpLimit, ImageUploader::getMaximumFileUploadSize());
 	}
 
 	public function testGetMaximumFileUploadSizeFallsBackToPhpLimitWhenOverrideInvalid(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock([]);
+		\Magrathea\ConfigApp::Instance()->Mock([]);
 		$phpLimit = ImageUploader::getMaximumFileUploadSize();
-		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => "not-a-size"]);
+		\Magrathea\ConfigApp::Instance()->Mock(["max_upload_size" => "not-a-size"]);
 		$this->assertEquals($phpLimit, ImageUploader::getMaximumFileUploadSize());
 	}
 
 	public function testGetMaximumFileUploadSizeFallsBackToPhpLimitWhenOverrideUnset(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock([]);
+		\Magrathea\ConfigApp::Instance()->Mock([]);
 		$phpLimit = ImageUploader::getMaximumFileUploadSize();
 		$this->assertEquals($phpLimit, ImageUploader::getMaximumFileUploadSize());
 	}
@@ -163,7 +163,7 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testGetExternalContentReturnsContentWithinLimit(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => "1M"]);
+		\Magrathea\ConfigApp::Instance()->Mock(["max_upload_size" => "1M"]);
 		$tmp = tempnam(sys_get_temp_dir(), "img");
 		file_put_contents($tmp, str_repeat("a", 100));
 		$content = (new ImageUploader())->GetExternalContent("file://".$tmp);
@@ -172,10 +172,10 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testGetExternalContentThrowsWhenContentExceedsLimit(): void {
-		\Magrathea2\ConfigApp::Instance()->Mock(["max_upload_size" => "10"]);
+		\Magrathea\ConfigApp::Instance()->Mock(["max_upload_size" => "10"]);
 		$tmp = tempnam(sys_get_temp_dir(), "img");
 		file_put_contents($tmp, str_repeat("a", 100));
-		$this->expectException(\Magrathea2\Exceptions\MagratheaApiException::class);
+		$this->expectException(\Magrathea\Exceptions\MagratheaApiException::class);
 		try {
 			(new ImageUploader())->GetExternalContent("file://".$tmp);
 		} finally {
@@ -184,7 +184,7 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function testGetDestinationUsesKeyFolderRawPath(): void {
-		$mediasPath = rtrim(\Magrathea2\Config::Instance()->Get("medias_path"), "/");
+		$mediasPath = rtrim(\Magrathea\Config::Instance()->Get("medias_path"), "/");
 		$key = new Apikey();
 		$key->folder = "my-folder";
 		$uploader = (new ImageUploader())->SetKey($key);

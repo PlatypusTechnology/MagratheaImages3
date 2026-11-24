@@ -2,7 +2,7 @@
 
 namespace MagratheaImages3\Images;
 
-use Magrathea2\Logger;
+use Magrathea\Logger;
 
 /**
  * Removes embedded metadata (EXIF/IPTC/XMP/comments) from uploaded images

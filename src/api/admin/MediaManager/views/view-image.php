@@ -1,7 +1,7 @@
 <?
 
-use Magrathea2\Admin\AdminElements;
-use Magrathea2\Admin\AdminForm;
+use Magrathea\Admin\AdminElements;
+use Magrathea\Admin\AdminForm;
 
 $elements = AdminElements::Instance();
 

@@ -68,6 +68,6 @@ function cache() {
 		.then(rs => showOn("#container-keys-rs", rs));
 }
 function createCache() {
-	callFeature("AdminApikey", "CreateCache")
+	callFeature("AdminApikey", "CreateCache", "POST")
 		.then(rs => showOn("#container-keys-rs", rs));
 }

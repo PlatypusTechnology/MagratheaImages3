@@ -8,8 +8,8 @@ class ImagesTest extends \PHPUnit\Framework\TestCase {
 
 	protected function setUp(): void {
 		// FromUploadFile()/FromUrl() call SetFilename(), which reads the next
-		// auto-increment id from the DB via GetNextID() — needs a mocked DB.
-		\Magrathea2\DB\Database::MockClass(\Magrathea2\DB\DatabaseSimulate::Instance());
+		// auto-increment id from the DB via Images::NextAutoIncrement() — needs a mocked DB.
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
 		parent::setUp();
 	}
 

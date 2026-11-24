@@ -11,18 +11,18 @@ class ImagesApiTest extends TestCase
 
 	public function setUp(): void
 	{
-		\Magrathea2\DB\Database::MockClass(\Magrathea2\DB\DatabaseSimulate::Instance());
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
 		// The "images" environment (this repo's default) has force_uuid enabled,
 		// which isn't the scenario under test here. "production" has it unset,
 		// matching the real deployment where the 999999/notarealkey123 request
 		// reached `new Images($id)` instead of the force_uuid check.
-		$this->originalEnvironment = \Magrathea2\Config::Instance()->GetEnvironment();
-		\Magrathea2\Config::Instance()->SetEnvironment("production");
+		$this->originalEnvironment = \Magrathea\Config::Instance()->GetEnvironment();
+		\Magrathea\Config::Instance()->SetEnvironment("production");
 	}
 
 	public function tearDown(): void
 	{
-		\Magrathea2\Config::Instance()->SetEnvironment($this->originalEnvironment);
+		\Magrathea\Config::Instance()->SetEnvironment($this->originalEnvironment);
 	}
 
 	public function testGetByIdThrowsNotFoundForMissingNumericId()
@@ -36,7 +36,7 @@ class ImagesApiTest extends TestCase
 		try {
 			$api->GetById(["id" => "999999", "public_key" => "notarealkey123"]);
 			$this->fail("Expected a MagratheaApiException to be thrown");
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(4043, $e->getCode());
 		}
 	}
@@ -47,7 +47,7 @@ class ImagesApiTest extends TestCase
 		try {
 			$api->Clone(["public_key" => "abc123def456", "image_uuid" => "9f8b7c6d-1234-4e56-9abc-1234567890ab"]);
 			$this->fail("Expected a MagratheaApiException to be thrown");
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(4005, $e->getCode());
 		}
 	}
@@ -58,7 +58,7 @@ class ImagesApiTest extends TestCase
 		try {
 			$api->Clone(["private_key" => "a1b2c3d4e5f6g7h8i9j0k1l2m", "image_uuid" => "9f8b7c6d-1234-4e56-9abc-1234567890ab"]);
 			$this->fail("Expected a MagratheaApiException to be thrown");
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(400, $e->getCode());
 		}
 	}
@@ -69,7 +69,7 @@ class ImagesApiTest extends TestCase
 		try {
 			$api->Clone(["private_key" => "a1b2c3d4e5f6g7h8i9j0k1l2m", "public_key" => "abc123def456"]);
 			$this->fail("Expected a MagratheaApiException to be thrown");
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(400, $e->getCode());
 		}
 	}
@@ -89,7 +89,7 @@ class ImagesApiTest extends TestCase
 				"image_uuid" => "9f8b7c6d-1234-4e56-9abc-1234567890ab",
 			]);
 			$this->fail("Expected a MagratheaApiException to be thrown");
-		} catch (\Magrathea2\Exceptions\MagratheaApiException $e) {
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
 			$this->assertEquals(4042, $e->getCode());
 		}
 	}

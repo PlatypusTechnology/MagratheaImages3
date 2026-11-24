@@ -2,15 +2,17 @@
 
 namespace MagratheaImages3;
 
-use Magrathea2\Admin\AdminFeature;
-use Magrathea2\Admin\iAdminFeature;
-use Magrathea2\Config;
+use Magrathea\Admin\AdminFeature;
+use Magrathea\Admin\iAdminFeature;
+use Magrathea\Config;
 use MagratheaImages3\Apikey\Apikey;
 use MagratheaImages3\Apikey\ApikeyControl;
 use MagratheaImages3\Images\Images;
 use MagratheaImages3\Images\ImagesControl;
 
 class MediaAdmin extends AdminFeature implements iAdminFeature {
+	use AdminPostOnly;
+
 	public string $featureName = "Medias";
 	public string $featureId = "AdminMedia";
 
@@ -62,6 +64,7 @@ class MediaAdmin extends AdminFeature implements iAdminFeature {
 	}
 
 	public function Remove() {
+		$this->RefuseIfNotPost();
 		$id = $_POST["id"];
 		$imageControl = new ImagesControl();
 		try {

@@ -2,7 +2,7 @@
 
 namespace MagratheaImages3\Images;
 
-use Magrathea2\Exceptions\MagratheaException;
+use Magrathea\Exceptions\MagratheaException;
 
 class ResampleCalculator {
 
