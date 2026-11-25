@@ -49,9 +49,9 @@ class FileManager {
 	}
 
 	public function DeleteGeneratedPattern($pattern): array {
-		// {id-or-uuid}_ prefix (matches Images::BuildGenFileName()), followed by any
+		// {id-or-uuid}_ prefix (matches Images::GeneratedName()), followed by any
 		// combination of the addon shapes it can produce ("thumb", "200x300", "200x300-s",
-		// "..._placeholder", etc.) and/or glob wildcards -- but nothing that could reach
+		// "200x300-f", "..._placeholder", etc.) and/or glob wildcards -- but nothing that could reach
 		// a shell or a path separator.
 		if (!preg_match('/^(\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_[A-Za-z0-9_.*-]+$/', $pattern)) {
 			throw new \Magrathea\Exceptions\MagratheaException("invalid pattern: [".$pattern."]");

@@ -7,6 +7,127 @@ include_once(__DIR__."/../_inc.php");
 
 class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 
+	private ?array $originalConfig = null;
+	private ?string $tmpMedias = null;
+	private array $tmpFiles = [];
+	private array $originalFiles = [];
+
+	protected function setUp(): void {
+		$this->originalFiles = $_FILES;
+		parent::setUp();
+	}
+
+	protected function tearDown(): void {
+		$_FILES = $this->originalFiles;
+		if ($this->originalConfig !== null) \Magrathea\Config::Instance()->SetConfig($this->originalConfig);
+		$this->originalConfig = null;
+		foreach ($this->tmpFiles as $file) @unlink($file);
+		$this->tmpFiles = [];
+		if ($this->tmpMedias) exec("rm -rf ".escapeshellarg($this->tmpMedias));
+		$this->tmpMedias = null;
+		parent::tearDown();
+	}
+
+	/** Points medias_path at a fresh temp folder: the configured one is the container's /var/www/medias. */
+	private function useTempMediasPath(): void {
+		$config = \Magrathea\Config::Instance();
+		$this->originalConfig = $config->GetConfig();
+		$this->tmpMedias = sys_get_temp_dir()."/magrathea-images-upload-".uniqid();
+		mkdir($this->tmpMedias);
+		$patched = $this->originalConfig;
+		$patched[$config->GetEnvironment()]["medias_path"] = $this->tmpMedias;
+		$config->SetConfig($patched);
+	}
+
+	/** A file upload as PHP hands it over in $_FILES["file"], also set there (Upload() reads $_FILES). */
+	private function uploadedFile(string $name): array {
+		$tmp = tempnam(sys_get_temp_dir(), "upl");
+		file_put_contents($tmp, "not really an image");
+		$this->tmpFiles[] = $tmp;
+		$file = ["name" => $name, "type" => "image/jpeg", "size" => 19, "tmp_name" => $tmp, "error" => UPLOAD_ERR_OK];
+		$_FILES = ["file" => $file];
+		return $file;
+	}
+
+	private function uploadKey(): Apikey {
+		$key = new Apikey();
+		$key->id = 5;
+		$key->folder = "upload-test";
+		$key->public_key = "pub123";
+		return $key;
+	}
+
+	private function assertApiError(int $code, callable $call): void {
+		try {
+			$rs = $call();
+			$this->fail("Expected a MagratheaApiException with code {$code}, got a return value: ".json_encode($rs));
+		} catch (\Magrathea\Exceptions\MagratheaApiException $e) {
+			$this->assertEquals($code, $e->getCode(), $e->getMessage());
+		}
+	}
+
+	/**
+	 * Before 3.7.0, Upload() caught its own errors and returned them as an array, which the API
+	 * sent as HTTP 200 with `success: true` and the failure nested in `data`. They must reach the
+	 * router as exceptions, so the response carries the error's real HTTP status.
+	 */
+	public function testUploadThrowsOnAnInvalidExtension(): void {
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
+		$this->useTempMediasPath();
+		$uploader = (new ImageUploader())->SetKey($this->uploadKey())->SetFile($this->uploadedFile("evil.exe"));
+		$this->assertApiError(4151, fn() => $uploader->Upload());
+	}
+
+	public function testUploadThrowsWhenTheFileIsNotSaved(): void {
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
+		$this->useTempMediasPath();
+		// under the CLI, move_uploaded_file() refuses any file that didn't come through an HTTP POST,
+		// so the upload never lands in raw/: the same outcome as an unwritable folder or a full disk
+		$uploader = (new ImageUploader())->SetKey($this->uploadKey())->SetFile($this->uploadedFile("photo.jpg"));
+		$this->assertApiError(5007, fn() => $uploader->Upload());
+		$this->assertSame([], glob($this->tmpMedias."/upload-test/raw/*"));
+	}
+
+	public function testUploadWithKeyPassesTheErrorToTheRouter(): void {
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
+		$this->useTempMediasPath();
+		$this->uploadedFile("evil.exe");
+		$this->assertApiError(4151, fn() => (new \MagratheaImages3\Images\ImagesApi())->UploadWithKey($this->uploadKey()));
+	}
+
+	/**
+	 * max_upload_size is enforced by PHP only when PHP's own limits are lower. Before 3.7.0 a file
+	 * over max_upload_size but under upload_max_filesize was accepted (URL uploads checked it).
+	 */
+	public function testSetFileThrowsWhenTheFileIsOverMaxUploadSize(): void {
+		\Magrathea\ConfigApp::Instance()->Mock(["max_upload_size" => "1K"]);
+		$file = ["name" => "big.jpg", "type" => "image/jpeg", "size" => 1025, "tmp_name" => "/nowhere", "error" => UPLOAD_ERR_OK];
+		$this->assertApiError(4002, fn() => (new ImageUploader())->SetFile($file));
+	}
+
+	public function testSetFileAcceptsAFileOfExactlyMaxUploadSize(): void {
+		\Magrathea\ConfigApp::Instance()->Mock(["max_upload_size" => "1K"]);
+		$file = ["name" => "ok.jpg", "type" => "image/jpeg", "size" => 1024, "tmp_name" => "/nowhere", "error" => UPLOAD_ERR_OK];
+		$this->assertEquals($file, (new ImageUploader())->SetFile($file)->file);
+	}
+
+	/**
+	 * A failure after the raw file is written (here: a PNG without readable dimensions, 4153)
+	 * must not leave the file in raw/: no row references it, so nothing would ever delete it.
+	 * Tested through UploadUrl(): under the CLI, Upload()'s move_uploaded_file() never succeeds.
+	 */
+	public function testUploadUrlRemovesTheRawFileWhenALaterStepFails(): void {
+		\Magrathea\DB\Database::MockClass(\Magrathea\DB\DatabaseSimulate::Instance());
+		\Magrathea\ConfigApp::Instance()->Mock([]);
+		$this->useTempMediasPath();
+		$source = tempnam(sys_get_temp_dir(), "png");
+		file_put_contents($source, "\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR"); // finfo: image/png; getimagesize(): false
+		$this->tmpFiles[] = $source;
+		$uploader = (new ImageUploader())->SetKey($this->uploadKey());
+		$this->assertApiError(4153, fn() => $uploader->UploadUrl("file://".$source));
+		$this->assertSame([], glob($this->tmpMedias."/upload-test/raw/*"));
+	}
+
 	public function testSetFileThrowsOnEmptyArray(): void {
 		$this->expectException(\Magrathea\Exceptions\MagratheaException::class);
 		(new ImageUploader())->SetFile([]);
@@ -152,14 +273,6 @@ class ImageUploaderTest extends \PHPUnit\Framework\TestCase {
 		$uploader = new ImageUploader();
 		$rs = $uploader->getImageReturn("image-placeholder");
 		$this->assertArrayNotHasKey("public_key", $rs);
-	}
-
-	public function testReturnImageNotUploadedShape(): void {
-		$uploader = new ImageUploader();
-		$rs = $uploader->returnImageNotUploaded("image-placeholder");
-		$this->assertFalse($rs["success"]);
-		$this->assertEquals("image was not uploaded", $rs["error"]);
-		$this->assertEquals("image-placeholder", $rs["data"]);
 	}
 
 	public function testGetExternalContentReturnsContentWithinLimit(): void {

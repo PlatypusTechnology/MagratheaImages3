@@ -86,7 +86,7 @@ class MagratheaImagesApi extends MagratheaApi {
 		$this->SecureImages();
 	}
 
-	// gets: generate, placeholder, stretch
+	// gets: generate, placeholder, stretch, fit
 	private function SecureImages() {
 		$api = new ImagesApi();
 		$this->Add("GET", "image/:public_key/:id/details", $api, "ViewImageDetails", self::OPEN);

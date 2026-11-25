@@ -2,7 +2,6 @@
 
 namespace MagratheaImages3\Images;
 
-use Magrathea\Exceptions\MagratheaApiException;
 use MagratheaImages3\Apikey\Apikey;
 use Magrathea\Exceptions\MagratheaException;
 use Magrathea\MagratheaHelper;
@@ -34,8 +33,13 @@ class ImageUploader {
 		if(empty($file)) {
 			ErrorCodes::Instance()->ThrowException(4001, null, "empty file");
 		}
-		if(in_array(@$file["error"], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
-			$limit = \MagratheaImages3\Helper::GetSize(self::getMaximumFileUploadSize());
+		$max = self::getMaximumFileUploadSize();
+		// PHP refuses a file over its own limits (the error codes); a lower max_upload_size is
+		// only enforced here. $file["size"] is what PHP received, not what the client claimed.
+		// $max is 0 only with post_max_size = 0, which is PHP's "no limit".
+		$overMax = $max > 0 && (int) @$file["size"] > $max;
+		if($overMax || in_array(@$file["error"], [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE])) {
+			$limit = \MagratheaImages3\Helper::GetSize($max);
 			ErrorCodes::Instance()->ThrowException(4002, null, "maximum allowed size is {$limit}");
 		}
 		$this->file = $file;
@@ -64,48 +68,58 @@ class ImageUploader {
 		return $rsData;
 	}
 
-	public function returnImageNotUploaded($image): array {
-		return [
-			"success" => false,
-			"error" => "image was not uploaded",
-			"data" => $image,
-		];
-}
-
+	/**
+	 * Uploads $_FILES["file"]. Every failure is thrown, never returned, so the API answers it
+	 * with its real HTTP status: ErrorCodes' own exceptions as they are, anything else (a DB
+	 * error) as 5001 in ImagesApi::UploadWithKey(). Before 3.7.0 this caught its own errors and
+	 * returned them, which the API sent as HTTP 200 with `success: true`.
+	 */
 	public function Upload(): array {
-		try {
-			$path = $this->GetDestination();
-			$this->ValidateDestination($path);
-			$image = $this->CreateImage()->FromUploadFile($this->file);
-			$this->ValidateExtension($image->extension);
+		$path = $this->GetDestination();
+		$this->ValidateDestination($path);
+		$image = $this->CreateImage()->FromUploadFile($this->file);
+		$this->ValidateExtension($image->extension);
 
-			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
-			move_uploaded_file($_FILES["file"]["tmp_name"], $finalName);
-			if(file_exists($finalName)){
-				MetadataStripper::Strip($finalName, $image->extension);
-				$size = @getimagesize($finalName);
-				if($size === false && $image->extension != "svg") {
-					ErrorCodes::Instance()->ThrowException(4153);
-				}
-				$image->width = $size ? $size[0] : 0;
-				$image->height = $size ? $size[1] : 0;
-				$image->Insert();
-				$this->key->IncrementUses();
-			} else {
-				return $this->returnImageNotUploaded($image);
-			}
-			return $this->getImageReturn($image);
-		} catch(MagratheaApiException $ex) {
-			return [
-				"success" => false,
-				"error" => $ex->getMessage(),
-				"data" => $ex->GetData(),
-			];
-		} catch(\Exception $e) {
-			return [
-				"success" => false,
-				"error"=> $e->getMessage()
-			];
+		$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
+		// the move's own result, not file_exists(): a file left there by a name collision isn't this upload
+		if(!move_uploaded_file($_FILES["file"]["tmp_name"], $finalName)) {
+			ErrorCodes::Instance()->ThrowException(5007, null, $image->filename);
+		}
+		try {
+			$this->ReadDimensions($image, $finalName);
+			$image->Insert();
+		} catch(\Throwable $ex) {
+			$this->RemoveUnsavedFile($finalName);
+			throw $ex;
+		}
+		$this->key->IncrementUses();
+		return $this->getImageReturn($image);
+	}
+
+	/**
+	 * Strips the metadata of a stored raw file, then reads its dimensions into $image. A file
+	 * without readable dimensions is 4153, except an SVG (it has none to read).
+	 * @return array|false getimagesize()'s result
+	 */
+	private function ReadDimensions(Images $image, string $file): array|false {
+		MetadataStripper::Strip($file, $image->extension);
+		$size = @getimagesize($file);
+		if($size === false && $image->extension != "svg") {
+			ErrorCodes::Instance()->ThrowException(4153);
+		}
+		$image->width = $size ? $size[0] : 0;
+		$image->height = $size ? $size[1] : 0;
+		return $size;
+	}
+
+	/**
+	 * Deletes a raw file whose upload failed before its row was inserted. Nothing references it,
+	 * so nothing else would ever delete it. Not called once the row exists: a file with a row is
+	 * a stored image, even when a later step (the key's use count) fails.
+	 */
+	private function RemoveUnsavedFile(string $file): void {
+		if(file_exists($file) && !@unlink($file)) {
+			Logger::Instance()->Log("upload failed and its raw file could not be removed: [".$file."]");
 		}
 	}
 
@@ -134,40 +148,34 @@ class ImageUploader {
 		return $content;
 	}
 
+	// like Upload(): every failure is thrown (ImagesApi::UploadUrlWithKey() maps non-API ones to 5001)
 	public function UploadUrl($url) {
 		$cleanUrl = strtok($url, '?');
-		try {
-			$path = $this->GetDestination();
-			$this->ValidateDestination($path);
+		$path = $this->GetDestination();
+		$this->ValidateDestination($path);
 
-			$content = $this->GetExternalContent($url);
-			$ext = $this->ValidateMime($content);
+		$content = $this->GetExternalContent($url);
+		$ext = $this->ValidateMime($content);
 
-			$image = $this->CreateImage()->FromUrl($cleanUrl, $ext);
+		$image = $this->CreateImage()->FromUrl($cleanUrl, $ext);
 
-			$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
-			file_put_contents($finalName, $content);
-			if(file_exists($finalName)){
-				MetadataStripper::Strip($finalName, $image->extension);
-				$size = @getimagesize($finalName);
-				if($size === false && $image->extension != "svg") {
-					ErrorCodes::Instance()->ThrowException(4153);
-				}
-				$image->width = $size ? $size[0] : 0;
-				$image->height = $size ? $size[1] : 0;
-				$image->file_type = $size ? $size["mime"] : $image->file_type;
-				$image->size = filesize($finalName);
-				$image->Insert();
-				$this->key->IncrementUses();
-			} else {
-				return $this->returnImageNotUploaded($image);
-			}
-			return $this->getImageReturn($image);
-		} catch(MagratheaApiException $ex) {
-			throw $ex;
-		} catch(\Exception $e) {
-			throw $e;
+		$finalName = MagratheaHelper::EnsureTrailingSlash($path).$image->filename;
+		// a short write (a full disk) leaves a truncated file: remove it like any other failure
+		if(file_put_contents($finalName, $content) !== strlen($content)) {
+			$this->RemoveUnsavedFile($finalName);
+			ErrorCodes::Instance()->ThrowException(5007, null, $image->filename);
 		}
+		try {
+			$size = $this->ReadDimensions($image, $finalName);
+			$image->file_type = $size ? $size["mime"] : $image->file_type;
+			$image->size = filesize($finalName);
+			$image->Insert();
+		} catch(\Throwable $ex) {
+			$this->RemoveUnsavedFile($finalName);
+			throw $ex;
+		}
+		$this->key->IncrementUses();
+		return $this->getImageReturn($image);
 	}
 
 	public function GetDestination(): string {

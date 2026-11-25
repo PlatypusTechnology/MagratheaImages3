@@ -155,21 +155,41 @@ class Images extends MagratheaModel implements \JsonSerializable {
 		return PathManager::GetRawFolder($this->folder).$this->filename;
 	}
 
-	public function GetThumbFile(): string {
-		$name = "thumb";
-		if($this->placeholder) $name .= "_placeholder";
-		return PathManager::GetGeneratedFolder($this->folder).$this->BuildGenFileName($name);
+	/**
+	 * The name of a generated file, without folder or extension:
+	 * "{accessId}_{size}[-f|-s][_placeholder]". "thumb" never gets a mode suffix; fit wins over stretch.
+	 *
+	 * The single builder for both sides of the cache: the path a file is generated at
+	 * (GetFileName()/GetThumbFile()) and the webp quick-access lookup
+	 * (ImagesApi::QuickAccessFileName()), which runs before the image is loaded. When the two names
+	 * differ, quick access silently never hits.
+	 */
+	public static function GeneratedName(string $accessId, string $size, bool $stretch, bool $fit, bool $placeholder): string {
+		$name = $accessId."_".$size;
+		if($size != "thumb") {
+			if($fit) $name .= "-f";
+			else if($stretch) $name .= "-s";
+		}
+		if($placeholder) $name .= "_placeholder";
+		return $name;
 	}
 
-	public function GetFileName($w, $h, $stretch=false): string {
-		$name = $w."x".$h;
-		if($stretch) $name .= "-s";
-		if($this->placeholder) $name .= "_placeholder";
-		return PathManager::GetGeneratedFolder($this->folder).$this->BuildGenFileName($name);
+	public function GetThumbFile(): string {
+		return PathManager::GetGeneratedFolder($this->folder)
+			.self::GeneratedName($this->GenAccessId(), "thumb", false, false, $this->placeholder);
+	}
+
+	public function GetFileName($w, $h, $stretch=false, $fit=false): string {
+		return PathManager::GetGeneratedFolder($this->folder)
+			.self::GeneratedName($this->GenAccessId(), $w."x".$h, (bool) $stretch, (bool) $fit, $this->placeholder);
+	}
+
+	private function GenAccessId(): string {
+		return (string) ($this->accessId ?? $this->id);
 	}
 
 	public function BuildGenFileName(string $addon): string {
-		return ($this->accessId ?? $this->id)."_".$addon;
+		return $this->GenAccessId()."_".$addon;
 	}
 
 	public function BuildFilename(string $addon): string {

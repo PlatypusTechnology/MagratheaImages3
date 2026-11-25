@@ -186,6 +186,15 @@ mariadb -u <user> -p <database> < database/migrations/migration-3.3.0.sql
 
 Migrations live in `database/migrations/`. Run migration files in order. Do not run them on a fresh install — `database.sql` already includes all schema changes up to the current version.
 
+`.sh` migrations (the first is `migration-3.7.0-purge-stretch-cache.sh`) change files, not the database, so they don't go through `mariadb`. Run them with bash on **each** instance, against that instance's `medias_path`, after its new code is deployed: dry run first (it lists what it would delete), then again with `--delete`:
+
+```bash
+bash database/migrations/migration-3.7.0-purge-stretch-cache.sh <medias_path>
+bash database/migrations/migration-3.7.0-purge-stretch-cache.sh <medias_path> --delete
+```
+
+A fresh install has nothing to purge, so it skips them too.
+
 ### Optional: R2 backup
 
 Copy `src/configs/r2.conf.sample` → `src/configs/r2.conf` and fill in the Cloudflare R2 account id, bucket and API token to enable a one-directional backup of `raw/` files to R2. Leave `enabled = false`, or leave the file absent entirely, to skip this — the app runs identically either way. See `future-plans/r2-backup-module.md` for the full setup procedure.

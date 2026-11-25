@@ -2,8 +2,9 @@
 
 3.7.0 moves the app from **MagratheaPHP2 2.3.1** (`platypustechnology/magratheaphp2`, namespace
 `Magrathea2`) to **MagratheaPHP 3.0** (`platypustechnology/magratheaphp`, namespace `Magrathea`).
-The public API keeps its routes, parameters, response shapes, JSON types and error codes. Section 1
-lists every difference a consumer can see.
+The public API keeps its routes, response shapes, JSON types and error codes. It gains one query
+parameter (`fit`), `stretch` starts doing what it was documented to do, and file uploads answer
+failures with real HTTP errors and enforce `max_upload_size`. Section 1 lists every difference a consumer can see.
 
 This file is the runbook for **each live instance**. Instances run different versions, were
 installed at different times, and their databases weren't all built from the same `database.sql`
@@ -37,9 +38,9 @@ MagratheaPHP 3 fixes both.
 
 ## 1. What changes for API consumers
 
-**Unchanged:** every route and parameter; response envelopes (`{success, data}`); JSON value types
+**Unchanged:** every route; every parameter except `stretch` (C8); response envelopes (`{success, data}`); JSON value types
 (ids, `width`, `height`, `size`, `uses`, `active`… keep their 2.x string/int mix, see the
-`$strictTypes` pin in section 10); error codes (`error_codes.conf`) and their HTTP statuses;
+`$strictTypes` pin in section 10); error codes (`error_codes.conf`, plus the new `5007`) and their HTTP statuses, except on uploads (C9);
 HTTP 200 with `success: false` for an unknown route.
 
 **Changed:**
@@ -53,9 +54,20 @@ HTTP 200 with `success: false` for an unknown route.
 | C5 | An unexpected exception without an error code reaching the router | HTTP 200, `data: {}` | HTTP 500, `data: {"message": …}` |
 | C6 | A PHP `\Error` (`TypeError`…) inside an action | uncaught: PHP's fatal error output, or an empty 500 where `sentry.php` installs its exception handler | JSON 500, `"Internal Server Error"` (the message only in DEV) |
 | C7 | `GET /version` → `magrathea_version` | `"2.3.1\n"` | `"3.0.0"` |
+| C8 | `stretch=1` on a sized image (`/image/{pub}/{id}/x/{W}x{H}`, `?size=`, `?w=&h=`, `/preview/{W}x{H}`) | cropped to W×H, exactly like a request without it (a bug) | the whole image resized to exactly W×H: **distorted** when the ratios differ, as documented. Files cached before the deploy keep serving the crop until the purge in 4.10 |
+| C9 | A **file** upload (`upload`, `key/{priv}/upload`) that fails after the key is accepted: extension not allowed (`4151`), unreadable image (`4153`), folder not writable (`5003`), or the file not saved (also on URL uploads) | HTTP 200 with `success: true`; the failure inside `data`: `{"success": false, "error": "…"}` (`"image was not uploaded"` for the last) | the real error: HTTP 415 or 500 with the error envelope and its code; the last is the new `5007` "Could not save image file" |
+| C10 | A **file** upload bigger than `max_upload_size` but within PHP's `upload_max_filesize`/`post_max_size`: only on instances whose `max_upload_size` is below PHP's limits | accepted (URL uploads already enforced it) | refused: HTTP 400, code `4002` |
 
 C5 and C6 are error paths the app's own code doesn't use (its errors go through `ErrorCodes`).
-They're listed for completeness.
+They're listed for completeness. C8 is visible to every consumer that sends `stretch=1`: find
+them first (step 2.6). C9 is visible to every consumer that uploads files and reads failures in
+its success handler (`data.success === false`): tell them to read the error path instead.
+C10 only exists where `max_upload_size` (admin → App Configuration) is below PHP's limits:
+`GET /settings` → `upload_limit_bytes` is then smaller than PHP's `upload_max_filesize`.
+
+**New:** `fit=1` on the same sized routes scales the image to fit inside W×H, keeping its ratio: no
+crop, no padding, never upscaled, so the response is *at most* W×H. Requests without `fit`
+behave as before. Details in `skills.md` and `swagger.yaml`.
 
 **Consumers of instances older than 3.6.0** also receive every API change since their version.
 Read `src/changelog.md` from their version up. The ones that break clients:
@@ -101,6 +113,13 @@ Do this for each instance.
    ```
    These hold real keys: don't commit them, and delete them when done.
 5. **Pause the R2 backup cron** (`backup.php`), if the instance has one, until section 7 passes.
+6. **Find who sends `stretch=1`** (C8). They've been getting crops, and after 4.10 they get
+   distorted images. That's the documented behavior, but it's a visible change for them:
+   ```bash
+   zgrep -h 'stretch=1' /var/log/apache2/*access*.log* | awk '{print $7}' | cut -d/ -f3 | sort | uniq -c | sort -rn
+   ```
+   It counts requests per public key (the path is `/image/{public_key}/...`; adjust the log path
+   and the `cut` field to the instance's layout). Nothing listed means nobody sees C8.
 
 ---
 
@@ -128,6 +147,9 @@ mariadb -u <user> -p <database> < database/migrations/<file>.sql
   look at the table (`SHOW CREATE TABLE images;`) before running anything else.
 - `migration-3.5.0-image-uuid.sql` runs `UPDATE images SET uuid = UUID()` on every row. On a large
   `images` table, run it in a maintenance window.
+
+**Every starting version** also runs one file migration, not SQL:
+`migration-3.7.0-purge-stretch-cache.sh`, after the code is live (section 4.10).
 
 **Settings that appeared along the way.** All of them are optional, unless noted:
 
@@ -238,6 +260,24 @@ loads from any working directory. A broken bootstrap now **exits non-zero**: it 
 exception and carry on. A run holds one database connection, which only matters if a single R2
 upload outlasts MySQL's `wait_timeout`. Re-enable the cron after section 7.
 
+### 4.10 Generated cache: stale `stretch` files
+
+Every version before 3.7.0 saved `stretch=1` requests as the default crop
+(`generated/{id}_{W}x{H}-s[_placeholder].{ext}`), and the cache keeps serving them (C8). Once the
+3.7.0 code is live (purging earlier only refills the cache with crops), run this on **each**
+instance, against its own `medias_path`:
+```bash
+bash database/migrations/migration-3.7.0-purge-stretch-cache.sh <medias_path>            # dry run: lists the files, then the count
+bash database/migrations/migration-3.7.0-purge-stretch-cache.sh <medias_path> --delete
+```
+- It only looks inside `generated/` folders, so raw uploads whose name ends in `-s` are safe.
+- It's idempotent: a second run, or one against storage another instance already purged, reports
+  `0 file(s) deleted`. Instances aren't believed to share `medias_path`, but there's no need to
+  confirm that first.
+- Deleted files regenerate, stretched, on their next request. There is no SQL, config or CDN step.
+  If a CDN or proxy caches an instance's images, purge its `stretch=1` URLs there too.
+- `generate=1` is no substitute: it regenerates only the URL that sends it.
+
 ---
 
 ## 5. Database: the timestamp contract
@@ -345,6 +385,13 @@ follow DST. `check` says which one is in use. To load them:
       (`/x/100x100`) and `/raw` render. Delete it (`DELETE /key/{priv}/delete/{id}`).
 - [ ] Wait a second and upload again with the same key: `key/{priv}/view` shows `updated_at` later
       than `created_at`. That's the `ON UPDATE` from section 5 at work.
+- [ ] On a non-square image (`file` prints the dimensions):
+      `/x/200x200?fit=1` keeps the original's ratio inside 200×200 (e.g. 200×113 for 16:9);
+      `/x/200x200?stretch=1` is 200×200 with the whole image (distorted); `/x/200x200` is still the
+      default crop (C8 and `fit`).
+- [ ] The purge from 4.10, run again: `0 file(s) deleted`.
+- [ ] Upload any file named `test.exe` (`POST /key/{priv}/upload`): HTTP 415, `success: false`,
+      code `4151` (C9).
 - [ ] `vendor/bin/magrathea check` and `models:verify`: no ERROR.
 - [ ] `setup.php` answers 403.
 - [ ] Admin: log in, then open Api Keys (list, a key's form), Medias, Generated Files, Images CRUD,
@@ -364,6 +411,10 @@ follow DST. `check` says which one is in use. To load them:
   `src/vendor/platypustechnology/magratheaphp` if the deploy copies files over.
 - **Database:** 3.7.0 adds no migration of its own. The section 5 `ALTER`s are compatible with
   3.6.4, and so are the section 3 files (3.6.4 needs them too). Nothing to undo.
+- **Generated cache:** after a rollback `stretch=1` crops again, but the stretched `-s` files 3.7.0
+  generated keep being served. Run the 4.10 purge again. 3.6.4 ignores `fit` (it returns the
+  crop), so the `-f` files are unused; to remove them:
+  `find <medias_path> -path '*/generated/*' -type f \( -name '*-f.*' -o -name '*-f_placeholder.*' \) -delete`.
 - **Config:** `db_sync_timezone` is ignored by 2.3.1. It can stay.
 - **Admins:** logged out again.
 - Rolling back reopens the SQL injection described at the top of this file.
@@ -382,6 +433,10 @@ These were found during the migration and behave the same on 3.6.4.
 - **Admin → Api Keys → edit a key with an empty expiration** fails in MySQL strict mode
   (`Incorrect datetime value: ''`). Set a date, or clear it in the database.
 - **`ApikeyCache.php` write failures are silent** (see 4.6).
+- **`/preview/{size}` with one dimension** (`/preview/800`, `/preview/800x`) answers a 500:
+  `Preview()` hands the missing height to `ImageViewer::Process(int, int)`, a `TypeError` (C6 on
+  3.7.0, a PHP fatal error on 3.6.4). The other sized routes fall back to the thumbnail instead.
+  It's an admin/testing route: send both dimensions.
 
 ---
 
@@ -413,10 +468,22 @@ Following MagratheaPHP's own guide,
 | Not applicable | M4 (no File Editor), M6 (no conflicting redeclarations), M8 (no `$model`/`GetDbTable()` clash), M12 (no code bumps `updated_at` on purpose), M17a (no `mysqli_report`), M20a (no `Values()`/`Set()` calls) |
 
 **How 3.7.0 was verified:**
-- The PHPUnit suite: 183 tests, green, as on 3.6.4.
+- The PHPUnit suite: 183 tests, green, as on 3.6.4. With `fit`, the `stretch` fix and the upload
+  fixes (C9, C10, orphan files): 219. The 8 new ones that need `gd` check output sizes and pixel colors on generated band images, and the
+  stretch one fails on the pre-fix code. They ran on a PHP with `gd` (the `MetadataStripper` ones need
+  `exif`, which that PHP lacked). Everything else ran on the host's PHP, which lacks `gd`.
+- Uploads: the tests call `ImageUploader::Upload()`/`UploadUrl()` and
+  `ImagesApi::UploadWithKey()` with a disallowed extension, a file that can't be saved, a file
+  over `max_upload_size`, and a PNG without readable dimensions (whose raw file must be gone
+  afterwards). Each failed on the old code.
+- `migration-3.7.0-purge-stretch-cache.sh` against a fixture tree: it lists and deletes exactly
+  the `-s`/`-s_placeholder` files in `generated/` (numeric and uuid names), leaves `raw/*-s*`,
+  `-f`, plain sizes and thumbs alone, and a second run reports 0.
 - The same 36 API calls (success and error paths: keys, uploads by file and URL, details by
   id/uuid, thumb/sized/raw/preview bytes, clone, deletes) run against a fresh MariaDB on 3.6.4 and
-  on 3.7.0. The only differences are C1, C2, C3 and C7; the image bytes are identical.
+  on 3.7.0. The only differences are C1, C2, C3 and C7; the image bytes are identical. This
+  comparison predates `fit`, the `stretch` fix and C9. None of its calls send `fit`/`stretch`;
+  a file upload that fails after the key is accepted, if it has one, now differs by C9.
 - An admin smoke test on 3.7.0: login, every custom feature, the POST guards (GET → 405), CSRF
   (a token-less POST is refused) and the Magrathea pages.
 - `vendor/bin/magrathea check` and `models:verify`, including against legacy column definitions.

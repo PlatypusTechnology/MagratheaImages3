@@ -170,23 +170,32 @@ class ImageViewer {
 		return $this->Process($thumbSize, $thumbSize);
 	}
 
-	public function Size($w, $h, $stretch=false): ImageViewer {
+	public function Size($w, $h, $stretch=false, $fit=false): ImageViewer {
 		if($this->lowQuality) $this->image->SetPlaceholder();
-		$file = $this->image->GetFileName($w, $h, $stretch);
+		$file = $this->image->GetFileName($w, $h, $stretch, $fit);
 		$this->SetFile($file);
 		$this->resizer = new ImageResizer($this->image);
-		return $this->Process($w, $h, $stretch);
+		return $this->Process($w, $h, $stretch, $fit);
 	}
 
-	public function Process(int $width, int $height, bool $stretch=false): ImageViewer {
+	/**
+	 * Generates the image at width×height, unless it exists already (see ShouldGenerate()).
+	 * Default: crop to fill exactly width×height (ResampleCalculator: centered horizontally, a taller
+	 * image keeps its top). $stretch: exactly width×height, ignoring
+	 * the ratio. $fit: inside width×height, keeping the ratio (ImageResizer::FitDimensions()); fit
+	 * wins over stretch.
+	 */
+	public function Process(int $width, int $height, bool $stretch=false, bool $fit=false): ImageViewer {
 		if($this->ShouldGenerate()) {
 			try {
 				if($this->debugOn) $this->resizer->DebugOn();
 				if($this->lowQuality) $this->resizer->SetPlaceholder();
+				// both before Resize(), which is what reads them
+				if($fit) $this->resizer->SetFit();
+				else if($stretch) $this->resizer->keepAspectRatio = false;
 				$this->resizer->SetNewFile($this->file);
 				$this->resizer->SetDimensions($width, $height);
 				$this->resizer->Resize();
-				if($stretch) $this->resizer->keepAspectRatio = false;
 				if($this->saveImage) $this->resizer->Save();
 			} catch(MagratheaApiException $ex) {
 				throw $ex;

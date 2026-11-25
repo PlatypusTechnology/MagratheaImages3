@@ -59,6 +59,14 @@ function loadDropzone() {
 		success: function (file, response) {
 			console.info("success", response);
 			showOn("#upload-response", JSON.stringify(response));
+		},
+		// upload errors are HTTP errors (4xx/5xx) since 3.7.0, so they never reach `success`.
+		// A listener, not the `error` option: Dropzone's own handler still marks the file.
+		init: function () {
+			this.on("error", function (file, response) {
+				console.error("upload failed", response);
+				showOn("#upload-response", typeof response === "string" ? response : JSON.stringify(response));
+			});
 		}
 	};
 	Dropzone.discover();

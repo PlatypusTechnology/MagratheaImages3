@@ -280,19 +280,6 @@ components:
               description: Public key of the Apikey used for this upload, safe to embed in image URLs
               example: "abc123def456"
 
-    UploadFailResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: false
-        error:
-          type: string
-          example: "invalid image extension: [exe]"
-        data:
-          nullable: true
-          description: Additional error context
-
     ImageDetailsResponse:
       type: object
       properties:
@@ -415,43 +402,28 @@ components:
 
     DebugResizeResponse:
       type: object
-      description: Debug info about the generated image
+      description: "`/preview/{size}?debug=1`: the resizer's steps, in order, as plain strings (`ImageResizer::GetDebug()`). Their wording is for humans and may change; don't parse it."
       properties:
-        id:
-          type: integer
-          example: 42
-        name:
-          type: string
-          example: "my_photo"
-        extension:
-          type: string
-          example: "jpg"
-        file:
-          type: string
-          example: "42_800x600"
-        width:
-          type: integer
-          example: 800
-        height:
-          type: integer
-          example: 600
-        dimensions:
-          type: string
-          example: "800x600"
-        size:
-          type: string
-          example: "45 KB"
-        generator:
-          type: object
-          description: Resizer internals (present when image was generated)
-          additionalProperties: true
-        error:
-          type: string
-          description: Present when the generated file does not exist
-          example: "FILE DOES NOT EXISTS"
-        location:
-          type: string
-          description: Directory path (present on error)
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            type: string
+          example:
+            - "Setting new file: /var/www/medias/f/generated/42_800x800-f"
+            - "Original dimensions: 1600x900"
+            - "Setting dimensions: 800x800"
+            - "fit: box 800x800 -> 800x450"
+            - "Getting gd for jpg image; raw file: /var/www/medias/f/raw/42_photo.jpg"
+            - "original image landscape aspect: 1.7777777777778"
+            - "new image landscape aspect: 1.7777777777778"
+            - "Same Aspect Ratio"
+            - "Resizing Calculator: [resize => ] [dst_x => 0][dst_y => 0] / [src_x => 0][src_y => 0] / [dst_width => 800][dst_height => 450] / [src_width => 1600][src_height => 900]"
+            - " IMAGECOPYRESAMPLED:  [dst_x => 0][dst_y => 0] / [src_x => 0][src_y => 0] / [dst_width => 800][dst_height => 450] / [src_width => 1600][src_height => 900]"
+            - "Creating blank image... of size (800x450)"
+            - "OK!"
 
     ApiError:
       type: object
@@ -465,8 +437,8 @@ components:
         |------|------|---------|
         | 400  | 400  | Invalid Data |
         | 4001 | 400  | Incorrect upload data |
-        | 4002 | 400  | File size greater than accepted (total POST body over `post_max_size`) |
-        | 4003 | 400  | File too big for this upload (single file over `upload_max_filesize`) |
+        | 4002 | 400  | File size greater than accepted (a file or URL download over the upload limit: `upload_limit_bytes` in `/settings`) |
+        | 4003 | 400  | File too big for this upload (the whole request over the upload limit, so PHP dropped the file) |
         | 4004 | 400  | Image must be requested by UUID (`force_uuid` enabled) |
         | 4005 | 400  | Private key is required |
         | 4006 | 400  | Invalid URL for upload |
@@ -480,6 +452,7 @@ components:
         | 4033 | 403  | Usage limit reached |
         | 4034 | 403  | Key expired |
         | 4035 | 403  | Key not active |
+        | 4036 | 403  | Cannot clone image: source and destination belong to the same key pair |
         | 404  | 404  | Not found |
         | 4041 | 404  | Public key not found |
         | 4042 | 404  | Private key not found |
@@ -495,6 +468,8 @@ components:
         | 5003 | 500  | Permissions failed on server |
         | 5004 | 500  | Image generation failed |
         | 5005 | 500  | Could not open file |
+        | 5006 | 500  | Could not copy image file |
+        | 5007 | 500  | Could not save image file |
       properties:
         success:
           type: boolean
@@ -518,6 +493,60 @@ components:
             debug_level:
               type: string
               example: "none"
+
+  # Image modifiers, shared by the image-serving routes. Each route lists the ones that apply to it.
+  parameters:
+
+    Fit:
+      name: fit
+      in: query
+      schema:
+        type: integer
+        enum: [0, 1]
+        default: 0
+      description: |
+        `1`: scale the image to fit **inside** W×H, keeping its own ratio:
+        `s = min(W/w, H/h, 1)`, output `round(w·s) × round(h·s)` (each side at least 1).
+        No crop, no padding, never upscaled: the response is *at most* W×H, and an original
+        smaller than the box comes back at its own size (re-encoded as usual).
+        Overrides `stretch`. Needs both W and H: with one missing, the response is the thumbnail,
+        not a fit. With `placeholder=1`, `placeholder_size` scales the fitted size.
+        Cached separately (`{id}_{W}x{H}-f`).
+
+    Stretch:
+      name: stretch
+      in: query
+      schema:
+        type: integer
+        enum: [0, 1]
+        default: 0
+      description: |
+        `1`: resize the whole image to exactly W×H, ignoring its ratio, so it's **distorted** when
+        the ratios differ. Ignored when `fit=1`. Cached separately (`{id}_{W}x{H}-s`).
+        Before 3.7.0 it was broken and returned the default crop.
+
+    Placeholder:
+      name: placeholder
+      in: query
+      schema:
+        type: integer
+        enum: [0, 1]
+        default: 0
+      description: |
+        `1`: a low-quality version (LQIP): the output size scaled by the `placeholder_size`
+        setting (App Configuration, default 0.5) and encoded at low quality.
+        Cached separately (`…_placeholder`).
+
+    Generate:
+      name: generate
+      in: query
+      schema:
+        type: integer
+        enum: [0, 1]
+        default: 0
+      description: |
+        `1`: regenerate the file and overwrite the cached copy, skipping the quick-access lookup.
+        Expensive: it's for replacing a stale cached file, not for routine requests.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Paths
@@ -845,13 +874,11 @@ paths:
       tags: [upload]
       summary: Upload an image (key in body)
       description: |
-        Uploads an image file. The private key must be supplied in the POST body as `key`.
+        Uploads an image file. The private key must be supplied in the POST body as `private_key`.
 
-        Key-resolution errors (missing/not-found/expired/inactive/over-limit key, no file
-        received) are returned as real HTTP error responses (`ApiError`). Once the key is
-        resolved, file-level validation errors (invalid extension/mime, corrupt image,
-        destination folder not writable) are instead returned as HTTP 200 with
-        `UploadFailResponse` (`success: false`).
+        Every failure is a real HTTP error (`ApiError`). Before 3.7.0, a failure after the key
+        was accepted (extension not allowed, unreadable image, folder not writable) answered
+        HTTP 200 with `success: true` and the failure nested in `data`.
       operationId: uploadImage
       requestBody:
         required: true
@@ -861,13 +888,13 @@ paths:
               type: object
               required:
                 - file
-                - key
+                - private_key
               properties:
                 file:
                   type: string
                   format: binary
                   description: Image file (jpg, jpeg, png, bmp, webp, wbmp, svg)
-                key:
+                private_key:
                   type: string
                   description: Private key
                   example: "a1b2c3d4e5f6g7h8i9j0k1l2m"
@@ -876,15 +903,13 @@ paths:
                   description: Optional subfolder within the key's folder
       responses:
         "200":
-          description: Upload result (success, or file-level validation failure — see description)
+          description: Uploaded image
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: "#/components/schemas/UploadSuccessResponse"
-                  - $ref: "#/components/schemas/UploadFailResponse"
+                $ref: "#/components/schemas/UploadSuccessResponse"
         "400":
-          description: "Private key missing (code 4005) or no file received (code 4001)"
+          description: "Private key missing (4005), no file received (4001), the file over the upload limit (4002), or the whole request over the upload limit (4003)"
           content:
             application/json:
               schema:
@@ -901,6 +926,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "415":
+          description: "Extension not allowed (4151), or the image's dimensions could not be read (4153)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Destination folder not writable (5003), the file could not be saved (5007), or another server error (5001)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /upload-url:
     post:
@@ -910,9 +947,7 @@ paths:
         Downloads an image from a remote URL and stores it. The private key must be supplied
         in the POST body.
 
-        Unlike file uploads, all validation errors here (invalid mime type, corrupt image,
-        destination folder not writable) are returned as real HTTP error responses
-        (`ApiError`), not as an HTTP 200 `UploadFailResponse`.
+        Every failure is a real HTTP error (`ApiError`).
       operationId: uploadImageFromUrl
       requestBody:
         required: true
@@ -944,7 +979,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/UploadSuccessResponse"
         "400":
-          description: "Private key missing (4005) or invalid URL (4006)"
+          description: "Private key missing (4005), invalid URL (4006), or the download over the upload limit (4002)"
           content:
             application/json:
               schema:
@@ -968,7 +1003,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
         "500":
-          description: "Destination folder not writable (code 5003)"
+          description: "Destination folder not writable (5003), the file could not be saved (5007), or another server error (5001)"
           content:
             application/json:
               schema:
@@ -981,11 +1016,9 @@ paths:
       description: |
         Uploads an image file using the private key supplied in the URL path.
 
-        Key-resolution errors (not-found/expired/inactive/over-limit key, no file received)
-        are returned as real HTTP error responses (`ApiError`). Once the key is resolved,
-        file-level validation errors (invalid extension/mime, corrupt image, destination
-        folder not writable) are instead returned as HTTP 200 with `UploadFailResponse`
-        (`success: false`).
+        Every failure is a real HTTP error (`ApiError`). Before 3.7.0, a failure after the key
+        was accepted (extension not allowed, unreadable image, folder not writable) answered
+        HTTP 200 with `success: true` and the failure nested in `data`.
       operationId: uploadImageWithKey
       parameters:
         - name: private_key
@@ -1013,13 +1046,17 @@ paths:
                   description: Optional subfolder
       responses:
         "200":
-          description: Upload result (success, or file-level validation failure — see description)
+          description: Uploaded image
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: "#/components/schemas/UploadSuccessResponse"
-                  - $ref: "#/components/schemas/UploadFailResponse"
+                $ref: "#/components/schemas/UploadSuccessResponse"
+        "400":
+          description: "No file received (4001), the file over the upload limit (4002), or the whole request over the upload limit (4003)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
         "403":
           description: "Key usage limit reached (4033), expired (4034), or not active (4035)"
           content:
@@ -1032,6 +1069,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+        "415":
+          description: "Extension not allowed (4151), or the image's dimensions could not be read (4153)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "500":
+          description: "Destination folder not writable (5003), the file could not be saved (5007), or another server error (5001)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 
   /key/{private_key}/upload-url:
     post:
@@ -1040,9 +1089,7 @@ paths:
       description: |
         Downloads an image from a remote URL using the private key in the URL path.
 
-        Unlike file uploads, all validation errors here (invalid mime type, corrupt image,
-        destination folder not writable) are returned as real HTTP error responses
-        (`ApiError`), not as an HTTP 200 `UploadFailResponse`.
+        Every failure is a real HTTP error (`ApiError`).
       operationId: uploadImageFromUrlWithKey
       parameters:
         - name: private_key
@@ -1077,7 +1124,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/UploadSuccessResponse"
         "400":
-          description: "Invalid URL (code 4006)"
+          description: "Invalid URL (4006), or the download over the upload limit (4002)"
           content:
             application/json:
               schema:
@@ -1101,7 +1148,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiError"
         "500":
-          description: "Destination folder not writable (code 5003)"
+          description: "Destination folder not writable (5003), the file could not be saved (5007), or another server error (5001)"
           content:
             application/json:
               schema:
@@ -1346,8 +1393,23 @@ paths:
   /image/{public_key}/{id}:
     get:
       tags: [images-secure]
-      summary: View image — auto size
-      description: Serves the image binary. Resolution is determined by query params `w`/`width`+`h`/`height`, or `size` (e.g. `800x600`), falling back to the thumbnail if none are provided.
+      summary: View image — size from the query string
+      description: |
+        Serves the image at the size the query string gives: `size=WxH` (e.g. `800x600`), or
+        `w` + `h` (aliases `width` + `height`). When `size` is present, `w`/`h` are ignored.
+
+        By default the image is **cropped to fill exactly W×H**: scaled to cover the box, then an
+        image wider than the box loses both sides evenly, and one taller than the box keeps its
+        top. `fit=1` scales it to fit inside W×H instead; `stretch=1` distorts it to exactly W×H.
+
+        With a dimension missing (`size=800`, `w=800` alone) or no size at all, the response is
+        the **thumbnail**: a `thumb_size` square crop, not a fit. `size=raw` doesn't apply here
+        (it's the thumbnail too): the original file is `/raw` or `/x/raw`.
+
+        **Format:** `image/webp` when the instance has `webp_quick_access` on (a cached file is
+        then served before the database is read), otherwise the original's format. Images that
+        can't be resized (SVG) are always served as the original file (`image/svg+xml`), with
+        every size and modifier ignored.
       operationId: viewImageSecure
       parameters:
         - name: public_key
@@ -1366,41 +1428,44 @@ paths:
               - type: string
           description: Numeric image ID, or its UUID. When `force_uuid` is enabled, only the UUID form is accepted (400 otherwise).
           example: 42
-        - name: w
-          in: query
-          schema:
-            type: integer
-        - name: h
-          in: query
-          schema:
-            type: integer
         - name: size
           in: query
           schema:
             type: string
-          description: "WxH format"
-        - name: stretch
+          description: "`WxH`, both integers. Takes precedence over `w`/`h`. One dimension only (`800`, `800x`): the thumbnail."
+          example: "800x600"
+        - name: w
           in: query
           schema:
             type: integer
-            enum: [0, 1]
-            default: 0
-        - name: placeholder
+          description: Width. Needs `h` too (without it, the thumbnail). Ignored when `size` is present.
+        - name: width
           in: query
           schema:
             type: integer
-            enum: [0, 1]
-            default: 0
-        - name: generate
+          description: Alias of `w`, read only when `w` is absent.
+        - name: h
           in: query
           schema:
             type: integer
-            enum: [0, 1]
-            default: 0
+          description: Height. Needs `w` too (without it, the thumbnail). Ignored when `size` is present.
+        - name: height
+          in: query
+          schema:
+            type: integer
+          description: Alias of `h`, read only when `h` is absent.
+        - $ref: "#/components/parameters/Fit"
+        - $ref: "#/components/parameters/Stretch"
+        - $ref: "#/components/parameters/Placeholder"
+        - $ref: "#/components/parameters/Generate"
       responses:
         "200":
-          description: Image binary
+          description: "Image binary: `image/webp` with `webp_quick_access` on, otherwise the original's format; SVGs as the original file"
           content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
             image/jpeg:
               schema:
                 type: string
@@ -1409,7 +1474,7 @@ paths:
               schema:
                 type: string
                 format: binary
-            image/webp:
+            image/svg+xml:
               schema:
                 type: string
                 format: binary
@@ -1442,6 +1507,21 @@ paths:
     get:
       tags: [images-secure]
       summary: View image at explicit size
+      description: |
+        Serves the image at `{size}` = `WxH` (both integers, e.g. `800x600`). The path size wins
+        over any `size`/`w`/`h` in the query.
+
+        By default the image is **cropped to fill exactly W×H**: scaled to cover the box, then an
+        image wider than the box loses both sides evenly, and one taller than the box keeps its
+        top. `fit=1` scales it to fit inside W×H instead (the response is *at most* W×H);
+        `stretch=1` distorts it to exactly W×H.
+
+        A single dimension (`/x/800`, `/x/800x`) returns the **thumbnail**: a `thumb_size` square
+        crop, not a fit. `/x/raw` serves the original file, like `/raw`. A non-numeric dimension
+        (`/x/800x600-s`) answers 500.
+
+        **Format:** as `/image/{public_key}/{id}`: `image/webp` with `webp_quick_access` on,
+        otherwise the original's; SVGs are always the original file.
       operationId: viewImageAtSizeSecure
       parameters:
         - name: public_key
@@ -1464,34 +1544,29 @@ paths:
           required: true
           schema:
             type: string
+          description: "`WxH` (both integers), or `raw` for the original file"
           example: "800x600"
-        - name: stretch
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-        - name: placeholder
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-        - name: generate
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
+        - $ref: "#/components/parameters/Fit"
+        - $ref: "#/components/parameters/Stretch"
+        - $ref: "#/components/parameters/Placeholder"
+        - $ref: "#/components/parameters/Generate"
       responses:
         "200":
-          description: Resized image binary
+          description: "Resized image binary: `image/webp` with `webp_quick_access` on, otherwise the original's format; SVGs (and `/x/raw`) as the original file"
           content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
             image/jpeg:
               schema:
                 type: string
                 format: binary
-            image/webp:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
               schema:
                 type: string
                 format: binary
@@ -1524,6 +1599,7 @@ paths:
     get:
       tags: [images-secure]
       summary: View original image file
+      description: Serves the file as uploaded, in its own format (`Content-Type` from its extension). No resizing, so no size or modifier applies.
       operationId: viewImageRawSecure
       parameters:
         - name: public_key
@@ -1543,9 +1619,17 @@ paths:
           example: 42
       responses:
         "200":
-          description: Original image binary
+          description: Original image binary, in the format it was uploaded in
           content:
             image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
               schema:
                 type: string
                 format: binary
@@ -1582,6 +1666,10 @@ paths:
     get:
       tags: [images-secure]
       summary: View image thumbnail
+      description: |
+        Serves the thumbnail: a `thumb_size` square (App Configuration, default 100), cropped
+        like any default size. `fit` and `stretch` don't apply here; `placeholder` and `generate` do.
+        Format as `/image/{public_key}/{id}`.
       operationId: viewImageThumbSecure
       parameters:
         - name: public_key
@@ -1599,27 +1687,25 @@ paths:
               - type: string
           description: Numeric image ID, or its UUID. When `force_uuid` is enabled, only the UUID form is accepted (400 otherwise).
           example: 42
-        - name: placeholder
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
-        - name: generate
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
+        - $ref: "#/components/parameters/Placeholder"
+        - $ref: "#/components/parameters/Generate"
       responses:
         "200":
-          description: Thumbnail image binary
+          description: "Thumbnail image binary: `image/webp` with `webp_quick_access` on, otherwise the original's format; SVGs as the original file"
           content:
+            image/webp:
+              schema:
+                type: string
+                format: binary
             image/jpeg:
               schema:
                 type: string
                 format: binary
-            image/webp:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
               schema:
                 type: string
                 format: binary
@@ -1652,6 +1738,16 @@ paths:
     get:
       tags: [images-secure]
       summary: Preview image at size without caching
+      description: |
+        Renders the image without reading or writing the cache: always generated, never saved.
+        It's for trying sizes and modifiers out, not for serving.
+
+        `{size}`: `WxH` (both required), `thumb` or `raw`. `fit`, `stretch` and `placeholder` work
+        as on `/x/{size}`, except that `stretch` here takes any truthy value. `generate` doesn't
+        apply (it always generates).
+
+        **Format:** always the original's (never converted to webp). SVGs are served as the
+        original file. `debug=1` returns the resizer's steps as JSON instead of the image.
       operationId: previewImageSecure
       parameters:
         - name: public_key
@@ -1674,34 +1770,41 @@ paths:
           required: true
           schema:
             type: string
+          description: "`WxH` (the `x` is case-insensitive), `thumb` or `raw`"
           example: "400x300"
+        - $ref: "#/components/parameters/Fit"
         - name: stretch
           in: query
           schema:
             type: integer
             enum: [0, 1]
             default: 0
-        - name: placeholder
-          in: query
-          schema:
-            type: integer
-            enum: [0, 1]
-            default: 0
+          description: "Any truthy value: resize to exactly W×H, ignoring the ratio (distorted). Ignored when `fit=1`. Before 3.7.0 it returned the default crop."
+        - $ref: "#/components/parameters/Placeholder"
         - name: debug
           in: query
           schema:
             type: integer
             enum: [0, 1]
             default: 0
+          description: "Any truthy value: return the resizer's steps as JSON (`DebugResizeResponse`) instead of the image"
       responses:
         "200":
-          description: Preview image binary, or JSON debug info when debug=1
+          description: Preview image binary in the original's format, or the resizer's steps as JSON when `debug=1`
           content:
             image/jpeg:
               schema:
                 type: string
                 format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
             image/webp:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
               schema:
                 type: string
                 format: binary

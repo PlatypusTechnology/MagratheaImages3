@@ -30,6 +30,8 @@ class ImageResizer {
 	public int $quality = 100;
 
 	public bool $placeholder = false;
+	// fit: scale to fit inside width×height, keeping the original's ratio (no crop, no upscale)
+	public bool $fit = false;
 
 	public function __construct(Images $img) {
 		$this->image = $img;
@@ -71,6 +73,39 @@ class ImageResizer {
 	public function SetPlaceholder(): ImageResizer {
 		$this->placeholder = true;
 		return $this;
+	}
+
+	public function SetFit(): ImageResizer {
+		$this->fit = true;
+		return $this;
+	}
+
+	/**
+	 * The size of a srcW×srcH image scaled to fit inside a boxW×boxH box, keeping its ratio:
+	 * scale = min(boxW/srcW, boxH/srcH, 1), so it never exceeds the box nor upscales the original.
+	 * Both sides are at least 1: an extreme ratio (4000×10 into 100×100) would round one to 0.
+	 * @return array [width, height]
+	 */
+	public static function FitDimensions(int $srcW, int $srcH, int $boxW, int $boxH): array {
+		$scale = min($boxW / $srcW, $boxH / $srcH, 1);
+		return [
+			max(1, (int) round($srcW * $scale)),
+			max(1, (int) round($srcH * $scale)),
+		];
+	}
+
+	/**
+	 * Fit: the box becomes the fitted size, and the whole source is resampled into it.
+	 * Resampling with keepAspectRatio = false (not through the crop calculator) is on purpose: the
+	 * rounded fitted ratio differs from the source's by a fraction (3000×2000 → 800×533), which
+	 * the calculator would treat as a different ratio and trim a pixel row or column for.
+	 */
+	private function ApplyFit(): void {
+		[$w, $h] = self::FitDimensions($this->image->width, $this->image->height, $this->width, $this->height);
+		$this->PrintDebug("fit: box ".$this->width."x".$this->height." -> ".$w."x".$h);
+		$this->width = $w;
+		$this->height = $h;
+		$this->keepAspectRatio = false;
 	}
 
 	public function CreateBlank(int $width=0, int $height=0) {
@@ -130,7 +165,13 @@ class ImageResizer {
 	}
 
 	public function Resize(): bool {
+		// fit runs before AdjustPlaceholder(): placeholder_size scales the fitted size, not the box
+		if($this->fit) $this->ApplyFit();
 		$this->AdjustPlaceholder();
+		if($this->fit) {
+			$this->width = max(1, $this->width);
+			$this->height = max(1, $this->height);
+		}
 		$calculator = new ResampleCalculator(
 			$this->image->width, $this->image->height,
 			$this->width, $this->height

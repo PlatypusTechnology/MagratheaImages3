@@ -16,16 +16,35 @@ class ImagesApi extends MagratheaApiControl {
 		$this->service = new ImagesControl();
 	}
 
+	/**
+	 * The resize mode from the query string, resolved once: fit=1 wins over stretch=1.
+	 * @return array ["fit" => bool, "stretch" => bool]
+	 */
+	private function ResizeMode(): array {
+		$fit = ($_GET["fit"] ?? null) == '1';
+		return [
+			"fit" => $fit,
+			"stretch" => !$fit && ($_GET["stretch"] ?? null) == '1',
+		];
+	}
+
+	/**
+	 * The generated webp a request would be served from, named by Images::GeneratedName(): the
+	 * same builder as the path GetFileName() generates at, from the URL's id (the image isn't
+	 * loaded yet). Thumb lookups ignore fit/stretch.
+	 */
+	public function QuickAccessFileName($params, string $size): string {
+		$mode = $this->ResizeMode();
+		$placeholder = ($_GET["placeholder"] ?? null) == '1';
+		return Images::GeneratedName((string) $params["id"], $size, $mode["stretch"], $mode["fit"], $placeholder).".webp";
+	}
+
+	// serves the generated webp and exits if it exists; otherwise returns and the request goes on
 	public function LookForImage($params, $size) {
 		if(@$_GET["generate"] == "1") return false;
 		$quickAccess = boolval(Config::Instance()->Get("webp_quick_access"));
 		if(!$quickAccess) return false;
-		$id = $params["id"];
-		$key = $params["public_key"];
-		$imageName = $id."_".$size;
-		if(@$_GET["stretch"] == '1') $imageName .= "-s";
-		if(@$_GET["placeholder"] == '1') $imageName .= "_placeholder";
-		ImageViewer::ViewQuickAccess($key, $imageName.".webp");
+		ImageViewer::ViewQuickAccess($params["public_key"], $this->QuickAccessFileName($params, $size));
 	}
 
 	private function ResolveImage($idOrUuid): ?Images {
@@ -102,7 +121,7 @@ class ImagesApi extends MagratheaApiControl {
 		}
 		$s = $dimensions["width"]."x".$dimensions["height"];
 		$this->LookForImage($params, $s);
-		$stretch = @$_GET["stretch"] == '1';
+		$mode = $this->ResizeMode();
 		$placeholder = @$_GET["placeholder"] == '1';
 		$forceGen = @$_GET["generate"] == '1';
 		try {
@@ -111,7 +130,7 @@ class ImagesApi extends MagratheaApiControl {
 			$viewer = new ImageViewer($image);
 			if($placeholder) $viewer->Placeholder();
 			if($forceGen) $viewer->ForceGeneration();
-			$viewer->Size($dimensions["width"], $dimensions["height"], $stretch);
+			$viewer->Size($dimensions["width"], $dimensions["height"], $mode["stretch"], $mode["fit"]);
 			return $viewer->ViewFile();
 		} catch(MagratheaApiException $e) {
 			throw $e;
@@ -256,12 +275,11 @@ class ImagesApi extends MagratheaApiControl {
 			if($size == "thumb") {
 				$viewer->Thumb();
 			} else {
-				$stretch = false;
-				if (@$_REQUEST["stretch"]) {
-					$stretch = true;
-				}
+				// fit as everywhere else; stretch keeps preview's looser check (any truthy value)
+				$fit = $this->ResizeMode()["fit"];
+				$stretch = !$fit && !empty($_REQUEST["stretch"]);
 				$sizes = explode('x', $size);
-				$viewer->Size($sizes[0], $sizes[1], $stretch);
+				$viewer->Size($sizes[0], $sizes[1], $stretch, $fit);
 			}
 			if($debug) {
 				return $viewer->GetResizerDebug();

@@ -86,6 +86,52 @@ class ImagesTest extends \PHPUnit\Framework\TestCase {
 		$this->assertEquals("7_thumb", $img->BuildGenFileName("thumb"));
 	}
 
+	private function sizedImage(): Images {
+		$img = new Images();
+		$img->id = 7;
+		$img->folder = "myfolder";
+		return $img;
+	}
+
+	public function testGetFileNameWithFitUsesTheFSuffix(): void {
+		$img = $this->sizedImage();
+		$this->assertStringEndsWith("/generated/7_800x800-f", $img->GetFileName(800, 800, false, true));
+		$img->SetPlaceholder();
+		$this->assertStringEndsWith("/generated/7_800x800-f_placeholder", $img->GetFileName(800, 800, false, true));
+	}
+
+	public function testGetFileNameFitWinsOverStretch(): void {
+		$this->assertStringEndsWith("/7_800x800-f", $this->sizedImage()->GetFileName(800, 800, true, true));
+	}
+
+	public function testGetFileNameWithoutFitIsUnchanged(): void {
+		$img = $this->sizedImage();
+		$this->assertStringEndsWith("/7_800x800-s", $img->GetFileName(800, 800, true));
+		$this->assertStringEndsWith("/7_800x800", $img->GetFileName(800, 800));
+		$img->SetPlaceholder();
+		$this->assertStringEndsWith("/7_800x800-s_placeholder", $img->GetFileName(800, 800, true));
+		$this->assertStringEndsWith("/7_800x800_placeholder", $img->GetFileName(800, 800));
+	}
+
+	public function testGetFileNameUsesTheAccessIdWhenSet(): void {
+		$img = $this->sizedImage();
+		$img->accessId = "9f8b7c6d-1234-4e56-9abc-1234567890ab";
+		$this->assertStringEndsWith("/9f8b7c6d-1234-4e56-9abc-1234567890ab_800x800-f", $img->GetFileName(800, 800, false, true));
+	}
+
+	public function testGetThumbFileIsUnchanged(): void {
+		$mediasPath = rtrim(\Magrathea\Config::Instance()->Get("medias_path"), "/");
+		$img = $this->sizedImage();
+		$this->assertEquals($mediasPath."/myfolder/generated/7_thumb", $img->GetThumbFile());
+		$img->SetPlaceholder();
+		$this->assertEquals($mediasPath."/myfolder/generated/7_thumb_placeholder", $img->GetThumbFile());
+	}
+
+	public function testGeneratedNameNeverAddsAModeSuffixToThumb(): void {
+		$this->assertEquals("7_thumb", Images::GeneratedName("7", "thumb", true, true, false));
+		$this->assertEquals("7_thumb_placeholder", Images::GeneratedName("7", "thumb", true, false, true));
+	}
+
 	public function testBuildFilenameInsertsAddonBeforeExtension(): void {
 		$img = new Images();
 		$img->filename = "42_photo.jpg";
